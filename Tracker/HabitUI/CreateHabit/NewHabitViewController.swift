@@ -22,6 +22,7 @@ final class NewHabitViewController: UIViewController {
     
     weak var habitSaverDelegate: HabitSaverDelegate?
     var isRegular: Bool!
+    var categories: [TrackerCategory] = []
     
     // MARK: - Private Properties
     
@@ -30,12 +31,9 @@ final class NewHabitViewController: UIViewController {
             checkIsAllParametersDidSetup()
         }
     }
-    private var category: TrackerCategory? = TrackerCategory(
-        categoryID: UUID(),
-        name: "Занятия спортом",
-        trackersInCategory: []
-    ) {
+    private var category: TrackerCategory? {
         didSet {
+            displayCategory()
             checkIsAllParametersDidSetup()
         }
     }
@@ -66,13 +64,34 @@ final class NewHabitViewController: UIViewController {
         displayData()
         let anyTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleAnyTap))
         view.addGestureRecognizer(anyTapGesture)
+        
+        // Используем новый метод для подписки на событие editingChanged
+        inputTrackerNameTxtField.addTargetForEditingChanged(self, action: #selector(textFieldDidChange))
+        
+        // Устанавливаем категорию по умолчанию из переданного массива categories
+        if !categories.isEmpty {
+            category = categories.first
+        } else {
+            // Если categories пуст, создаём новую категорию как запасной вариант
+            category = TrackerCategory(
+                categoryID: UUID(),
+                name: "Занятия спортом",
+                trackersInCategory: []
+            )
+        }
     }
     
     // MARK: - Actions
     
+    @objc private func textFieldDidChange(_ textField: UITextField) {
+        trackerName = textField.text
+        checkIsAllParametersDidSetup()
+    }
+    
     @objc private func handleAnyTap() {
         trackerName = inputTrackerNameTxtField.inputText
         _ = inputTrackerNameTxtField.resignFirstResponder()
+        checkIsAllParametersDidSetup()
     }
     
     @objc private func categoryButtonDidTap() {
@@ -117,8 +136,9 @@ final class NewHabitViewController: UIViewController {
     
     private func checkIsAllParametersDidSetup() {
         isAllParametersDidSetup = trackerName?.isEmpty == false
-            && (!isRegular || schedule?.isEmpty == false)
-            && (category?.name.isEmpty == false)
+        && (!isRegular || schedule?.isEmpty == false)
+        && (category?.name.isEmpty == false)
+        print("trackerName: \(trackerName ?? "nil"), isRegular: \(isRegular ?? false), schedule: \(schedule?.description ?? "nil"), category: \(category?.name ?? "nil"), isAllParametersDidSetup: \(isAllParametersDidSetup)")
     }
     
     private func displaySchedule() {
@@ -142,6 +162,7 @@ extension NewHabitViewController: ScheduleSaverDelegate {
         self.schedule = newSchedule
         displaySchedule()
         dismiss(animated: true)
+        checkIsAllParametersDidSetup()
     }
 }
 
@@ -167,6 +188,7 @@ extension NewHabitViewController: UITextFieldDelegate {
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         trackerName = textField.text
+        checkIsAllParametersDidSetup()
     }
 }
 
@@ -240,7 +262,7 @@ private extension NewHabitViewController {
     }
     
     func createDoneButton() -> CircularButton {
-        let button = CircularButton(title: "Создать")
+        let button = CircularButton(title: "Сохранить")
         button.circularButtonStyle = isAllParametersDidSetup ? .normal : .disabled
         button.addTarget(self, action: #selector(doneButtonDidTap), for: .touchUpInside)
         return button

@@ -25,7 +25,7 @@ final class HabitsViewController: UIViewController {
     
     // MARK: - Private Properties
     
-    private var categories: [TrackerCategory] = [
+    var categories: [TrackerCategory] = [
         TrackerCategory(categoryID: UUID(),
                         name: "Домашний уют",
                         trackersInCategory: [

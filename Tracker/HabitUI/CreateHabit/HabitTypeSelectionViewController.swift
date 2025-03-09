@@ -38,6 +38,7 @@ final class HabitTypeSelectionViewController: UIViewController {
             let trackerVC = NewHabitViewController()
             trackerVC.isRegular = isRegular
             trackerVC.habitSaverDelegate = habitSaverDelegate
+            trackerVC.categories = (habitSaverDelegate as? HabitsViewController)?.categories ?? []
             present(trackerVC, animated: true)
         }
 

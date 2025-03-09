@@ -67,6 +67,11 @@ final class HabitNameInputView: UIStackView {
     override func resignFirstResponder() -> Bool {
         habitNameTextField.resignFirstResponder()
     }
+    
+    /// Метод для подписки на событие editingChanged внутреннего textField
+        func addTargetForEditingChanged(_ target: Any?, action: Selector) {
+            habitNameTextField.addTarget(target, action: action, for: .editingChanged)
+        }
 }
 
 // MARK: - Private Methods
