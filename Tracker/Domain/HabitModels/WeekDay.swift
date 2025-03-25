@@ -13,7 +13,7 @@ import Foundation
 enum WeekDay: Int, CaseIterable {
     case sun = 1, mon, tue, wed, thu, fri, sat
     
-    // MARK: - Public Properties
+    // MARK: - Static Properties
     
     /// Список всех дней недели с учетом первого дня недели в текущем календаре
     static var allWeekdays: [WeekDay] {
@@ -22,36 +22,42 @@ enum WeekDay: Int, CaseIterable {
             + (1..<firstDay).compactMap { WeekDay(rawValue: $0) }
     }
     
-    // MARK: - Public Methods
+    /// Короткие текстовые обозначения дней недели
+    static let shortWeekdayText: [WeekDay: String] = [
+        .sun: "Вс",
+        .mon: "Пн",
+        .tue: "Вт",
+        .wed: "Ср",
+        .thu: "Чт",
+        .fri: "Пт",
+        .sat: "Сб"
+    ]
+    
+    /// Полные текстовые названия дней недели
+    static let longWeekdayText: [WeekDay: String] = [
+        .sun: "Воскресенье",
+        .mon: "Понедельник",
+        .tue: "Вторник",
+        .wed: "Среда",
+        .thu: "Четверг",
+        .fri: "Пятница",
+        .sat: "Суббота"
+    ]
+    
+    // MARK: - Static Methods
     
     /// Возвращает короткое текстовое обозначение дня недели
     /// - Parameter day: День недели
     /// - Returns: Краткое название (например, "Пн" для понедельника)
     static func getShortText(for day: WeekDay) -> String {
-        switch day {
-        case .sun: return "Вс"
-        case .mon: return "Пн"
-        case .tue: return "Вт"
-        case .wed: return "Ср"
-        case .thu: return "Чт"
-        case .fri: return "Пт"
-        case .sat: return "Сб"
-        }
+        shortWeekdayText[day] ?? ""
     }
     
     /// Возвращает полное текстовое название дня недели
     /// - Parameter day: День недели
     /// - Returns: Полное название (например, "Понедельник")
     static func getLongText(for day: WeekDay) -> String {
-        switch day {
-        case .sun: return "Воскресенье"
-        case .mon: return "Понедельник"
-        case .tue: return "Вторник"
-        case .wed: return "Среда"
-        case .thu: return "Четверг"
-        case .fri: return "Пятница"
-        case .sat: return "Суббота"
-        }
+        longWeekdayText[day] ?? ""
     }
     
     /// Формирует текстовое описание расписания на основе выбранных дней
@@ -62,5 +68,18 @@ enum WeekDay: Int, CaseIterable {
         if schedule.count == allCases.count { return "Каждый день" }
         let sortedDays = schedule.sorted { $0.rawValue < $1.rawValue }
         return sortedDays.map { getShortText(for: $0) }.joined(separator: ", ")
+    }
+    
+    /// Преобразует строку с короткими названиями дней недели в массив дней
+    /// - Parameter string: Строка с днями недели (например, "Пн, Ср")
+    /// - Returns: Массив дней недели
+    static func getWeekDays(from string: String) -> [WeekDay] {
+        let invertedShortWD = Dictionary(
+            uniqueKeysWithValues: shortWeekdayText.map { ($0.value.lowercased(), $0.key) }
+        )
+        return string.split(separator: ",").compactMap {
+            let normalizedWeekDay = $0.trimmingCharacters(in: .whitespaces).lowercased()
+            return invertedShortWD[normalizedWeekDay]
+        }
     }
 }

@@ -9,121 +9,116 @@ import UIKit
 
 // MARK: - Class Definition
 
-/// Стек для ввода названия привычки с подсказкой о максимальной длине
+/// Представление для ввода названия трекера
 final class HabitNameInputView: UIStackView {
     
     // MARK: - Public Properties
     
-    /// Скрывает или показывает подсказку о максимальной длине
-    var shouldHideMaxLengthHint = true {
+    var isMaxLengthHintHidden = true {
         didSet {
-            maxLengthHintView.isHidden = shouldHideMaxLengthHint
+            maxLengthHintView.isHidden = isMaxLengthHintHidden
         }
     }
     
-    /// Текст, введенный пользователем
-    var inputText: String {
-        habitNameTextField.text ?? ""
+    var text: String {
+        inputTextField.text ?? ""
     }
     
-    /// Делегат для обработки событий текстового поля
-    weak var inputDelegate: UITextFieldDelegate? {
+    weak var delegate: UITextFieldDelegate? {
         didSet {
-            habitNameTextField.delegate = inputDelegate
+            inputTextField.delegate = delegate
         }
     }
     
-    /// Проверяет, активно ли текстовое поле
     override var isFirstResponder: Bool {
-        habitNameTextField.isFirstResponder
+        get {
+            return inputTextField.isFirstResponder
+        }
     }
     
     // MARK: - Private Properties
     
-    private lazy var habitNameTextField = { createTextField() }()
-    private lazy var maxLengthHintView = { createMaxLengthHint() }()
+    private lazy var inputTextField = { createInputTextField() }()
+    private lazy var maxLengthHintView = { createHintView() }()
     
     // MARK: - Initializers
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setupView()
+        
+        backgroundColor = .ypWhiteDay
+        axis = .vertical
+        spacing = 0
+        addArrangedSubview(inputTextField)
+        addArrangedSubview(maxLengthHintView)
+        translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            inputTextField.leadingAnchor.constraint(equalTo: leadingAnchor),
+            inputTextField.topAnchor.constraint(equalTo: topAnchor),
+            inputTextField.trailingAnchor.constraint(equalTo: trailingAnchor),
+            inputTextField.heightAnchor.constraint(equalToConstant: 75),
+            
+            maxLengthHintView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            maxLengthHintView.topAnchor.constraint(equalTo: inputTextField.bottomAnchor),
+            maxLengthHintView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
+        maxLengthHintView.isHidden = isMaxLengthHintHidden
+    }
+    
+    convenience init(delegate: UITextFieldDelegate, placeholder: String) {
+        self.init(frame: .zero)
+        inputTextField.delegate = delegate
+        inputTextField.placeholder = placeholder
     }
     
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    /// Инициализирует стек с делегатом и плейсхолдером
-    convenience init(delegate: UITextFieldDelegate, placeholder: String) {
-        self.init(frame: .zero)
-        habitNameTextField.delegate = delegate
-        habitNameTextField.placeholder = placeholder
-    }
-    
     // MARK: - Public Methods
     
-    /// Снимает фокус с текстового поля
     override func resignFirstResponder() -> Bool {
-        habitNameTextField.resignFirstResponder()
+        return inputTextField.resignFirstResponder()
     }
-    
-    /// Метод для подписки на событие editingChanged внутреннего textField
-        func addTargetForEditingChanged(_ target: Any?, action: Selector) {
-            habitNameTextField.addTarget(target, action: action, for: .editingChanged)
-        }
 }
 
-// MARK: - Private Methods
+// MARK: - Extensions
 
+// MARK: - Layout
 private extension HabitNameInputView {
-    func setupView() {
-        backgroundColor = .ypWhiteDay
-        axis = .vertical
-        spacing = 0
-        addArrangedSubview(habitNameTextField)
-        addArrangedSubview(maxLengthHintView)
-        translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            habitNameTextField.leadingAnchor.constraint(equalTo: leadingAnchor),
-            habitNameTextField.topAnchor.constraint(equalTo: topAnchor),
-            habitNameTextField.trailingAnchor.constraint(equalTo: trailingAnchor),
-            habitNameTextField.heightAnchor.constraint(equalToConstant: 80),
-            
-            maxLengthHintView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            maxLengthHintView.topAnchor.constraint(equalTo: habitNameTextField.bottomAnchor),
-            maxLengthHintView.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
-        maxLengthHintView.isHidden = shouldHideMaxLengthHint
-    }
-    
-    func createTextField() -> TrackerNameInputTextField {
-        let textField = TrackerNameInputTextField()
-        textField.placeholder = "Назови свою привычку"
+    func createInputTextField() -> NameInputTextField {
+        let textField = NameInputTextField()
+        textField.placeholder = "Введите название трекера"
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }
     
-    func createMaxLengthHint() -> HabitNameInputFooterView {
-        HabitNameInputFooterView()
+    func createHintView() -> HabitNameInputFooterView {
+        let hintView = HabitNameInputFooterView()
+        return hintView
     }
 }
 
 // MARK: - Class Definition
 
-/// Кастомное текстовое поле для ввода названия привычки
-final class TrackerNameInputTextField: UITextField {
+/// Поле ввода для названия трекера с кастомными отступами
+class NameInputTextField: UITextField {
     
     // MARK: - Private Properties
     
-    private let textPadding = UIEdgeInsets(top: 20, left: 16, bottom: 20, right: 41)
+    private let insets = UIEdgeInsets(top: 20, left: 16, bottom: 20, right: 41)
     
     // MARK: - Initializers
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setupAppearance()
+        layer.cornerRadius = 16
+        layer.masksToBounds = true
+        backgroundColor = .ypBackgroundDay
+        clearButtonMode = .whileEditing
+        textColor = .ypBlackDay
+        font = UIFont.systemFont(ofSize: 17, weight: .regular)
     }
     
     required init?(coder: NSCoder) {
@@ -132,26 +127,15 @@ final class TrackerNameInputTextField: UITextField {
     
     // MARK: - Public Methods
     
-    override func textRect(forBounds bounds: CGRect) -> CGRect {
-        bounds.inset(by: textPadding)
+    override open func textRect(forBounds bounds: CGRect) -> CGRect {
+        return bounds.inset(by: insets)
     }
     
-    override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
-        bounds.inset(by: textPadding)
+    override open func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+        return bounds.inset(by: insets)
     }
     
-    override func editingRect(forBounds bounds: CGRect) -> CGRect {
-        bounds.inset(by: textPadding)
-    }
-    
-    // MARK: - Private Methods
-    
-    private func setupAppearance() {
-        layer.cornerRadius = 16
-        layer.masksToBounds = true
-        backgroundColor = .ypBackgroundDay
-        clearButtonMode = .whileEditing
-        textColor = .ypBlackDay
-        font = UIFont.systemFont(ofSize: 17, weight: .regular)
+    override open func editingRect(forBounds bounds: CGRect) -> CGRect {
+        return bounds.inset(by: insets)
     }
 }

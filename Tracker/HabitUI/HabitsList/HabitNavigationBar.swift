@@ -9,13 +9,20 @@ import UIKit
 
 // MARK: - Class Definition
 
-/// Навигационная панель для управления привычками
 final class HabitNavigationBar: UINavigationBar {
     
     // MARK: - Private Properties
     
-    private weak var habitBarDelegate: TrackersBarControllerProtocol?
-    private lazy var datePicker = { createDatePicker() }()
+    private weak var trackerBarDelegate: TrackersBarControllerProtocol?
+    
+    private lazy var datePicker: UIDatePicker = {
+        let picker = UIDatePicker()
+        picker.datePickerMode = .date
+        picker.preferredDatePickerStyle = .compact
+        picker.locale = Locale(identifier: "ru_RU")
+        picker.addTarget(self, action: #selector(currentDateDidChange), for: .valueChanged)
+        return picker
+    }()
     
     // MARK: - Initializers
     
@@ -27,50 +34,50 @@ final class HabitNavigationBar: UINavigationBar {
         fatalError("init(coder:) has not been implemented")
     }
     
-    /// Инициализирует навигационную панель с делегатом
-    convenience init(frame: CGRect, habitBarDelegate: TrackersBarControllerProtocol) {
+    convenience init(frame: CGRect,
+                     trackerBarDelegate: TrackersBarControllerProtocol) {
         self.init(frame: frame)
-        self.habitBarDelegate = habitBarDelegate
-        setupNavigationItems()
+        self.trackerBarDelegate = trackerBarDelegate
+        
+        configureNavigationBar()
     }
     
     // MARK: - Actions
     
-    @objc private func addHabitTapped() {
-        habitBarDelegate?.addTrackerButtonDidTapped()
+    @objc private func createTrackerTapped() {
+        trackerBarDelegate?.addTrackerButtonDidTapped()
     }
     
-    @objc private func dateDidChange() {
-        habitBarDelegate?.currentDateDidChange(for: datePicker.date)
+    @objc private func currentDateDidChange() {
+        trackerBarDelegate?.currentDateDidChange(for: datePicker.date)
     }
     
     // MARK: - Private Methods
     
-    private func createDatePicker() -> UIDatePicker {
-        let picker = UIDatePicker()
-        picker.datePickerMode = .date
-        picker.preferredDatePickerStyle = .compact
-        picker.locale = Locale(identifier: "ru_RU")
-        picker.addTarget(self, action: #selector(dateDidChange), for: .valueChanged)
-        return picker
-    }
-    
-    private func setupNavigationItems() {
+    private func configureNavigationBar() {
         let navigationItem = UINavigationItem()
-        let addButtonItem = UIBarButtonItem(
+        
+        let leftBarItem = UIBarButtonItem(
             image: UIImage(systemName: "plus"),
             style: .plain,
             target: self,
-            action: #selector(addHabitTapped)
+            action: #selector(createTrackerTapped)
         )
-        navigationItem.leftBarButtonItem = addButtonItem
+        leftBarItem.imageInsets = UIEdgeInsets(top: 0, left: -2, bottom: 0, right: 0)
+        
+        navigationItem.leftBarButtonItem = leftBarItem
         navigationItem.title = "Трекеры"
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: datePicker)
         
+        configureAppearance()
+        setItems([navigationItem], animated: true)
+    }
+    
+    private func configureAppearance() {
+        layoutMargins.left = 16
         prefersLargeTitles = true
         isTranslucent = false
         tintColor = .ypBlackDay
-        setItems([navigationItem], animated: true)
         translatesAutoresizingMaskIntoConstraints = false
     }
 }
