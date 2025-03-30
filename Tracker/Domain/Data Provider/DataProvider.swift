@@ -55,7 +55,7 @@ final class DataProvider {
     
     init(delegate: DataProviderDelegate) {
         self.delegate = delegate
-        self.dataStore = DataStore()
+        self.dataStore = DataStore.shared
         self.dataStoreFetchedController = dataStore.dataStoreFetchedResultController
         self.dataStoreFetchedController?.dataProviderDelegate = self
     }

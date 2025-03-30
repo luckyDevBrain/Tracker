@@ -5,7 +5,7 @@
 //  Created by Kirill on 24.03.2025.
 //
 
-import CoreData
+import Foundation
 
 // MARK: - Class Definition
 
@@ -111,9 +111,7 @@ final class MockDataGenerator {
            let categoryCoreData = result.first {
             return TrackerCategoryStore(categoryCoreData: categoryCoreData)
         } else {
-            guard let newCategory = NSEntityDescription.insertNewObject(forEntityName: "TrackerCategoryCoreData", into: context) as? TrackerCategoryCoreData
-            else { return nil }
-            
+            let newCategory = TrackerCategoryCoreData(context: context)
             newCategory.name = "Дефолтная категория"
             try? context.save()
             return TrackerCategoryStore(categoryCoreData: newCategory)

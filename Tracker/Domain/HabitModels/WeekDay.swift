@@ -11,9 +11,12 @@ import Foundation
 
 /// Перечисление дней недели с поддержкой текстового представления
 enum WeekDay: Int, CaseIterable {
+    
     case sun = 1, mon, tue, wed, thu, fri, sat
     
     // MARK: - Static Properties
+    
+    static let everydayDescription = "Каждый день"
     
     /// Список всех дней недели с учетом первого дня недели в текущем календаре
     static var allWeekdays: [WeekDay] {
@@ -65,7 +68,7 @@ enum WeekDay: Int, CaseIterable {
     /// - Returns: Строка с описанием (например, "Пн, Ср" или "Каждый день")
     static func getDescription(for schedule: [WeekDay]) -> String {
         if schedule.isEmpty { return "Нет дней" }
-        if schedule.count == allCases.count { return "Каждый день" }
+        if schedule.count == allCases.count { return WeekDay.everydayDescription }
         let sortedDays = schedule.sorted { $0.rawValue < $1.rawValue }
         return sortedDays.map { getShortText(for: $0) }.joined(separator: ", ")
     }

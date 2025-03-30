@@ -39,7 +39,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func createTabBarController() -> UITabBarController {
         let tabBarController = UITabBarController()
         configureTabBarAppearance(tabBarController.tabBar)
-
+        
         let trackersVC = HabitsViewController()
         trackersVC.tabBarItem = UITabBarItem(
             title: "Трекеры",
@@ -47,7 +47,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             selectedImage: nil
         )
 
-        let statisticsVC = HabitsViewController()
+        let statisticsVC = StatisticsViewController()
         statisticsVC.tabBarItem = UITabBarItem(
             title: "Статистика",
             image: UIImage(systemName: "hare.fill"),

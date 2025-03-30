@@ -9,8 +9,18 @@ import UIKit
 
 // MARK: - Class Definition
 
-final class HabitStatisticsViewController: UIViewController {
+final class StatisticsViewController: UIViewController {
 
+    // MARK: - Private Properties
+    
+    private lazy var infoLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Продолжение следует..."
+        label.font = UIFont.systemFont(ofSize: 24, weight: .medium)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     // MARK: - Lifecycle
     
     override func viewDidLoad() {
@@ -26,16 +36,12 @@ final class HabitStatisticsViewController: UIViewController {
     }
 
     private func setupLabel() {
-        let label = UILabel()
-        label.text = "Продолжение следует..."
-        label.font = UIFont.systemFont(ofSize: 24, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
         
-        view.addSubview(label)
+        view.addSubview(infoLabel)
         
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            infoLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            infoLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
 }

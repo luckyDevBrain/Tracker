@@ -12,7 +12,6 @@ import UIKit
 
 /// Протокол для управления выборкой данных из хранилища
 protocol DataStoreFetchedControllerProtocol {
-    var delegate: NSFetchedResultsControllerDelegate? { get set }
     var dataProviderDelegate: DataProviderProtocol? { get set }
     var fetchedTrackerController: NSFetchedResultsController<TrackerCoreData>? { get set }
     var numberOfObjects: Int? { get }
@@ -30,12 +29,6 @@ final class DataStoreFetchController: NSObject {
     
     // MARK: - Public Properties
     
-    var delegate: NSFetchedResultsControllerDelegate? {
-        didSet {
-            fetchedTrackerController?.delegate = delegate
-        }
-    }
-    
     var fetchedTrackerController: NSFetchedResultsController<TrackerCoreData>?
     
     weak var dataProviderDelegate: DataProviderProtocol?
@@ -51,19 +44,22 @@ final class DataStoreFetchController: NSObject {
     // MARK: - Initializers
     
     init(context: NSManagedObjectContext) {
+        super.init()
+        
         let fetchRequest = TrackerCoreData.fetchRequest()
         fetchRequest.sortDescriptors = [
             NSSortDescriptor(key: #keyPath(TrackerCoreData.category), ascending: true),
             NSSortDescriptor(key: #keyPath(TrackerCoreData.name), ascending: true)
         ]
-        let controller = NSFetchedResultsController(
+        
+        fetchedTrackerController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
             managedObjectContext: context,
             sectionNameKeyPath: #keyPath(TrackerCoreData.category),
             cacheName: nil
         )
-        self.fetchedTrackerController = controller
-        super.init()
+        
+        fetchedTrackerController?.delegate = self
     }
     
     // MARK: - Private Methods
@@ -71,25 +67,30 @@ final class DataStoreFetchController: NSObject {
     private func createPredicateWith(selectedDate: Date, searchString: String? = nil) -> NSPredicate? {
         guard let currentWeekDay = WeekDay(rawValue: Calendar.current.component(.weekday, from: selectedDate))
         else { return nil }
-        let weekDayText = WeekDay.shortWeekdayText[currentWeekDay] ?? ""
         
+        let weekDayText = WeekDay.shortWeekdayText[currentWeekDay] ?? ""
         let searchText = searchString?.trimmingCharacters(in: .whitespaces) ?? ""
+        let baseFormat = "%K == %@ OR %K CONTAINS[c] %@ OR %K == %@"
         
         if searchText.isEmpty {
             return NSPredicate(
-                format: "%K == %@ OR %K CONTAINS[c] %@",
-                #keyPath(TrackerCoreData.isRegular),
-                NSNumber(booleanLiteral: false),
-                #keyPath(TrackerCoreData.schedule),
-                weekDayText
-            )
-        } else {
-            return NSPredicate(
-                format: "(%K == %@ OR %K CONTAINS[c] %@) AND %K CONTAINS[c] %@",
+                format: baseFormat,
                 #keyPath(TrackerCoreData.isRegular),
                 NSNumber(booleanLiteral: false),
                 #keyPath(TrackerCoreData.schedule),
                 weekDayText,
+                #keyPath(TrackerCoreData.schedule),
+                WeekDay.everydayDescription
+            )
+        } else {
+            return NSPredicate(
+                format: "(\(baseFormat)) AND %K CONTAINS[c] %@",
+                #keyPath(TrackerCoreData.isRegular),
+                NSNumber(booleanLiteral: false),
+                #keyPath(TrackerCoreData.schedule),
+                weekDayText,
+                #keyPath(TrackerCoreData.schedule),
+                WeekDay.everydayDescription,
                 #keyPath(TrackerCoreData.name),
                 searchText
             )

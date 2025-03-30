@@ -26,6 +26,8 @@ final class DataStore: DataStoreProtocol {
     
     // MARK: - Public Properties
     
+    static let shared = DataStore()
+    
     var dataStoreFetchedResultController: DataStoreFetchedControllerProtocol?
     
     // MARK: - Private Properties
@@ -41,7 +43,7 @@ final class DataStore: DataStoreProtocol {
     
     // MARK: - Initializers
     
-    init() {
+    private init() {
         self.persistentContainer = NSPersistentContainer(name: Constants.persistentContainerName)
         self.persistentContainer.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error {
@@ -51,9 +53,7 @@ final class DataStore: DataStoreProtocol {
         self.context = persistentContainer.viewContext
         
         if let context {
-            let controller = DataStoreFetchController(context: context)
-            controller.delegate = controller
-            self.dataStoreFetchedResultController = controller
+            dataStoreFetchedResultController = DataStoreFetchController(context: context)
         }
     }
     
