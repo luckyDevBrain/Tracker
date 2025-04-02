@@ -170,7 +170,7 @@ private extension HabitCell {
     }
     
     func createPinnedImagedView() -> UIImageView {
-        let imageView = UIImageView(image: pinImage)
+        let imageView = UIImageView()
         imageView.tintColor = .white
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView

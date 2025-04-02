@@ -112,6 +112,7 @@ final class MockDataGenerator {
             return TrackerCategoryStore(categoryCoreData: categoryCoreData)
         } else {
             let newCategory = TrackerCategoryCoreData(context: context)
+            newCategory.categoryID = UUID()
             newCategory.name = "Дефолтная категория"
             try? context.save()
             return TrackerCategoryStore(categoryCoreData: newCategory)
