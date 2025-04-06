@@ -65,35 +65,26 @@ final class DataStoreFetchController: NSObject {
     // MARK: - Private Methods
     
     private func createPredicateWith(selectedDate: Date, searchString: String? = nil) -> NSPredicate? {
-        guard let currentWeekDay = WeekDay(rawValue: Calendar.current.component(.weekday, from: selectedDate))
+        guard let startOfDay = selectedDate.truncated(),
+              let currentWeekDay = WeekDay(rawValue: Calendar.current.component(.weekday, from: selectedDate))
         else { return nil }
         
         let weekDayText = WeekDay.shortWeekdayText[currentWeekDay] ?? ""
         let searchText = searchString?.trimmingCharacters(in: .whitespaces) ?? ""
-        let baseFormat = "%K == %@ OR %K CONTAINS[c] %@ OR %K == %@"
+        
+        let basePredicate = NSPredicate(format:
+                                            "(%K == NO AND (%K.@count == 0 OR SUBQUERY(%K, $r, $r.%K == %@).@count > 0)) OR %K CONTAINS[c] %@ OR %K == %@",
+                                        #keyPath(TrackerCoreData.isRegular), #keyPath(TrackerCoreData.completed),
+                                        #keyPath(TrackerCoreData.completed), #keyPath(TrackerRecordCoreData.completedAt), startOfDay as NSDate,
+                                        #keyPath(TrackerCoreData.schedule), weekDayText,
+                                        #keyPath(TrackerCoreData.schedule), WeekDay.everydayDescription
+        )
         
         if searchText.isEmpty {
-            return NSPredicate(
-                format: baseFormat,
-                #keyPath(TrackerCoreData.isRegular),
-                NSNumber(booleanLiteral: false),
-                #keyPath(TrackerCoreData.schedule),
-                weekDayText,
-                #keyPath(TrackerCoreData.schedule),
-                WeekDay.everydayDescription
-            )
+            return basePredicate
         } else {
-            return NSPredicate(
-                format: "(\(baseFormat)) AND %K CONTAINS[c] %@",
-                #keyPath(TrackerCoreData.isRegular),
-                NSNumber(booleanLiteral: false),
-                #keyPath(TrackerCoreData.schedule),
-                weekDayText,
-                #keyPath(TrackerCoreData.schedule),
-                WeekDay.everydayDescription,
-                #keyPath(TrackerCoreData.name),
-                searchText
-            )
+            let namePredicate = NSPredicate(format: "%K CONTAINS[c] %@", #keyPath(TrackerCoreData.name), searchText)
+            return NSCompoundPredicate(type: .and, subpredicates: [basePredicate, namePredicate])
         }
     }
 }

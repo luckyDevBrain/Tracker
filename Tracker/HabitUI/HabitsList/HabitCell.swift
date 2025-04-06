@@ -32,6 +32,7 @@ final class HabitCell: UICollectionViewCell {
             cellColor = tracker.color?.color() ?? .clear
             emoji = tracker.emoji
             quantity = tracker.completedCounter
+            isRegular = tracker.isRegular
             isCompleted = tracker.isCompleted
         }
     }
@@ -46,6 +47,12 @@ final class HabitCell: UICollectionViewCell {
             quantityLabel.text = "\(quantity) \(daysText)"
         }
     }
+    
+    var isRegular: Bool? {
+            didSet {
+                quantityLabel.isHidden = isRegular == false
+            }
+        }
     
     var isCompleted: Bool? {
         didSet {

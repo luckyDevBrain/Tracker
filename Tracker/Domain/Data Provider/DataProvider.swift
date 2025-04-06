@@ -168,6 +168,7 @@ extension DataProvider: DataProviderProtocol {
         )
         
         dataStore.saveTracker(trackerStore)
+        dataStoreFetchedController?.fetchData() // Принудительно обновляем данные
     }
     
     func getCategoryNameForTracker(at indexPath: IndexPath) -> String {

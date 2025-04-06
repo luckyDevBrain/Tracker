@@ -71,7 +71,7 @@ final class HabitsViewController: UIViewController {
         view.backgroundColor = .ypWhiteDay
         
         // Загрузим мок-данные в БД для тестирования пока нет функциональности добавления категорий
-        MockDataGenerator.setupRecords(with: dataProvider)
+        // MockDataGenerator.setupRecords(with: dataProvider)
         
         addSubviews()
         addConstraints()
@@ -108,6 +108,9 @@ final class HabitsViewController: UIViewController {
 extension HabitsViewController: NewTrackerSaverDelegate {
     func save(tracker: Tracker, in category: TrackerCategory) {
         dataProvider.save(tracker: tracker, in: category)
+        dataProvider.loadData() // Обновляем данные
+        collectionView.reloadData()
+        updatePlaceholderType()
         dismiss(animated: true)
     }
 }
