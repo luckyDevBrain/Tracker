@@ -7,403 +7,27 @@
 
 import UIKit
 
-// MARK: - Protocols
+// MARK: - Protocol
 
+/// Протокол делегата для обновления индексов
+protocol DataProviderDelegate: AnyObject {
+    func didUpdateIndexPath(_ updatedIndexes: UpdatedIndexes)
+}
+
+/// Протокол для управления навигационной панелью трекеров
 protocol TrackersBarControllerProtocol: AnyObject {
     func addTrackerButtonDidTapped()
     func currentDateDidChange(for selectedDate: Date)
 }
 
-protocol HabitSaverDelegate: AnyObject {
-    func save(tracker: Tracker, in categoryID: UUID)
+/// Протокол для сохранения нового трекера
+protocol NewTrackerSaverDelegate: AnyObject {
+    func save(tracker: Tracker, in category: TrackerCategory)
 }
 
-// MARK: - Class Definition
+// MARK: - Structs
 
-/// Контроллер для управления списком привычек
-final class HabitsViewController: UIViewController {
-    
-    // MARK: - Private Properties
-    
-    var categories: [TrackerCategory] = [
-        TrackerCategory(categoryID: UUID(),
-                        name: "Домашний уют",
-                        trackersInCategory: [
-                            Tracker(name: "Забрать посылку на wildberries",
-                                    isRegular: true,
-                                    emoji: "❤️",
-                                    color: .ypColorSelection5,
-                                    schedule: [.mon, .tue]),
-                            Tracker(name: "Спланировать отпуск",
-                                    isRegular: false,
-                                    emoji: "🏝️",
-                                    color: .ypColorSelection2,
-                                    schedule: nil),
-                            Tracker(name: "Приготовить вкусный ужин",
-                                    isRegular: true,
-                                    emoji: "🤔",
-                                    color: .ypColorSelection15,
-                                    schedule: [.sun]),
-                        ]),
-        TrackerCategory(categoryID: UUID(),
-                        name: "Занятия спортом",
-                        trackersInCategory: []),
-        TrackerCategory(categoryID: UUID(),
-                        name: "Радостные мелочи",
-                        trackersInCategory: [
-                            Tracker(name: "Созвон в зуме в 19:00",
-                                    isRegular: true,
-                                    emoji: "😻",
-                                    color: .ypColorSelection3,
-                                    schedule: nil),
-                            Tracker(name: "Посмотреть интересный фильм/сериал!",
-                                    isRegular: true,
-                                    emoji: "❤️",
-                                    color: .ypColorSelection1,
-                                    schedule: [.fri, .sat, .tue, .mon]),
-                            Tracker(name: "Выгулять пёпселя",
-                                    isRegular: false,
-                                    emoji: "🐶",
-                                    color: .ypColorSelection18,
-                                    schedule: Array(WeekDay.allCases)),
-                        ]),
-        TrackerCategory(categoryID: UUID(),
-                        name: "Самочувствие",
-                        trackersInCategory: [])
-    ]
-    
-    private var completedTrackers: [TrackerRecord] = []
-    private var visibleCategories: [TrackerCategory] = []
-    private var completedTrackerIDs: Set<UUID> = []
-    private var completedTrackersCounter: [UUID: Int] = [:]
-    
-    private var currentDate: Date = Date()
-    private var searchFilterText: String = ""
-    
-    private lazy var navBar = { createNavigationBar() }()
-    private lazy var searchField = { createSearchField() }()
-    private lazy var habitsCollection = { createHabitsCollection() }()
-    private lazy var emptyStateView = { EmptyStateView() }()
-    
-    private let layoutParams = GeometricParams(cellCount: 2, leftInset: 16, rightInset: 16, cellSpacing: 9)
-    
-    // MARK: - Lifecycle
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        view.backgroundColor = .ypWhiteDay
-        setupSubviews()
-        setupConstraints()
-        reloadData()
-        
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        view.addGestureRecognizer(tapGesture)
-    }
-    
-    // MARK: - Actions
-    
-    @objc private func dismissKeyboard(_ sender: UITapGestureRecognizer) {
-        searchField.resignFirstResponder()
-    }
-    
-    // MARK: - Private Methods
-    
-    private func reloadData() {
-        completedTrackerIDs = fetchCompletedTrackerIDs(for: currentDate)
-        initializeCompletionCounters()
-        updateVisibleCategories()
-        habitsCollection.reloadData()
-    }
-    
-    private func initializeCompletionCounters() {
-        completedTrackers.forEach { record in
-            completedTrackersCounter[record.trackerID] = (completedTrackersCounter[record.trackerID] ?? 0) + 1
-        }
-    }
-    
-    private func isDateMatching(_ date: Date, schedule: [WeekDay]?) -> Bool {
-        guard let schedule else { return true }
-        if let weekday = WeekDay(rawValue: Calendar.current.component(.weekday, from: date)) {
-            return schedule.contains(weekday)
-        }
-        return false
-    }
-    
-    private func isNameMatching(_ name: String, searchText: String) -> Bool {
-        searchText.isEmpty || name.lowercased().contains(searchText.lowercased())
-    }
-    
-    private func updateVisibleCategories() {
-        let filteredCategories = categories.compactMap { category -> TrackerCategory? in
-            let visibleTrackers = category.trackersInCategory.filter {
-                (!$0.isRegular || isDateMatching(currentDate, schedule: $0.schedule)) &&
-                isNameMatching($0.name, searchText: searchFilterText)
-            }
-            return visibleTrackers.isEmpty ? nil : TrackerCategory(
-                categoryID: category.categoryID,
-                name: category.name,
-                trackersInCategory: visibleTrackers
-            )
-        }
-        visibleCategories = filteredCategories
-        updateEmptyStateVisibility()
-    }
-    
-    private func isTrackerCompleted(withId trackerID: UUID) -> Bool {
-        completedTrackerIDs.contains(trackerID)
-    }
-    
-    private func markTrackerCompleted(withID trackerID: UUID) {
-        let record = TrackerRecord(trackerID: trackerID, dateCompleted: currentDate)
-        completedTrackers.append(record)
-        completedTrackerIDs.insert(trackerID)
-        completedTrackersCounter[trackerID] = (completedTrackersCounter[trackerID] ?? 0) + 1
-    }
-    
-    private func markTrackerUncompleted(withID trackerID: UUID) {
-        if completedTrackerIDs.contains(trackerID) {
-            completedTrackerIDs.remove(trackerID)
-            if let count = completedTrackersCounter[trackerID], count > 1 {
-                completedTrackersCounter[trackerID] = count - 1
-            } else {
-                completedTrackersCounter.removeValue(forKey: trackerID)
-            }
-        }
-        for (index, record) in completedTrackers.enumerated() {
-            if Calendar.current.isDate(record.dateCompleted, inSameDayAs: currentDate) {
-                completedTrackers.remove(at: index)
-                break
-            }
-        }
-    }
-    
-    private func fetchCompletedTrackerIDs(for date: Date) -> Set<UUID> {
-        Set(completedTrackers.filter {
-            Calendar.current.isDate($0.dateCompleted, inSameDayAs: date)
-        }.map { $0.trackerID })
-    }
-    
-    private func getCompletionCount(for trackerID: UUID) -> Int {
-        completedTrackersCounter[trackerID] ?? 0
-    }
-    
-    private func saveHabit(_ habit: Tracker, in categoryID: UUID) {
-        guard let index = categories.firstIndex(where: { $0.categoryID == categoryID }) else {
-            assertionFailure("Failed to save habit in category \(categoryID)")
-            return
-        }
-        var trackers = categories[index].trackersInCategory
-        trackers.append(habit)
-        categories[index] = TrackerCategory(
-            categoryID: categoryID,
-            name: categories[index].name,
-            trackersInCategory: trackers
-        )
-    }
-}
-
-// MARK: - HabitSaverDelegate
-
-extension HabitsViewController: HabitSaverDelegate {
-    func save(tracker: Tracker, in categoryID: UUID) {
-        saveHabit(tracker, in: categoryID)
-        updateVisibleCategories()
-        habitsCollection.reloadData()
-        dismiss(animated: true)
-    }
-}
-
-// MARK: - TrackerViewCellProtocol
-
-extension HabitsViewController: TrackerViewCellProtocol {
-    func trackerDoneButtonDidTapped(for trackerID: UUID) {
-        if isTrackerCompleted(withId: trackerID) {
-            markTrackerUncompleted(withID: trackerID)
-        } else {
-            markTrackerCompleted(withID: trackerID)
-        }
-    }
-    
-    func trackerCounterValue(for trackerID: UUID) -> Int {
-        getCompletionCount(for: trackerID)
-    }
-}
-
-// MARK: - TrackersBarControllerProtocol
-
-extension HabitsViewController: TrackersBarControllerProtocol {
-    func addTrackerButtonDidTapped() {
-        print("addTrackerButtonDidTapped called")
-        searchField.resignFirstResponder()
-        let typeSelectionVC = HabitTypeSelectionViewController()
-        typeSelectionVC.habitSaverDelegate = self
-        typeSelectionVC.modalPresentationStyle = .automatic
-        present(typeSelectionVC, animated: true)
-    }
-    
-    func currentDateDidChange(for selectedDate: Date) {
-        currentDate = selectedDate
-        completedTrackerIDs = fetchCompletedTrackerIDs(for: currentDate)
-        updateVisibleCategories()
-        habitsCollection.reloadData()
-    }
-}
-
-// MARK: - UITextFieldDelegate
-
-extension HabitsViewController: UITextFieldDelegate {
-    func textFieldDidChangeSelection(_ textField: UITextField) {
-        searchFilterText = textField.text?.trimmingCharacters(in: .whitespaces) ?? ""
-        updateVisibleCategories()
-        habitsCollection.reloadData()
-    }
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        searchField.resignFirstResponder()
-        return true
-    }
-}
-
-// MARK: - UICollectionViewDataSource
-
-extension HabitsViewController: UICollectionViewDataSource {
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
-        visibleCategories.count
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        visibleCategories[section].trackersInCategory.count
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: HabitViewCell.cellIdentifier, for: indexPath) as? HabitViewCell
-        else { return UICollectionViewCell() }
-        
-        let tracker = visibleCategories[indexPath.section].trackersInCategory[indexPath.row]
-        
-        cell.delegate = self
-        cell.trackerID = tracker.trackerID
-        cell.cellName = tracker.name
-        cell.cellColor = tracker.color
-        cell.emoji = tracker.emoji
-        cell.isCompleted = isTrackerCompleted(withId: tracker.trackerID)
-        cell.quantity = getCompletionCount(for: tracker.trackerID)
-        
-        let isFutureDate = Calendar.current.compare(Date(), to: currentDate, toGranularity: .day) == .orderedAscending
-        cell.isDoneButtonEnabled = !isFutureDate
-        return cell
-    }
-}
-
-// MARK: - UICollectionViewDelegateFlowLayout
-
-extension HabitsViewController: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        CGSize(width: (collectionView.frame.width - layoutParams.paddingWidth) / CGFloat(layoutParams.cellCount),
-               height: 90 + HabitViewCell.quantityCardHeight)
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
-        layoutParams.cellSpacing
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        UIEdgeInsets(top: 16, left: layoutParams.leftInset, bottom: 12, right: layoutParams.rightInset)
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        0
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        guard kind == UICollectionView.elementKindSectionHeader,
-              let view = collectionView.dequeueReusableSupplementaryView(
-                ofKind: kind,
-                withReuseIdentifier: HabitsSectionHeaderView.viewIdentifier,
-                for: indexPath
-              ) as? HabitsSectionHeaderView
-        else { return UICollectionReusableView() }
-        
-        view.headerLabel.text = visibleCategories[indexPath.section].name
-        return view
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        CGSize(width: collectionView.frame.width, height: 18)
-    }
-}
-
-// MARK: - Layout
-
-private extension HabitsViewController {
-    func createSearchField() -> UISearchTextField {
-        let searchField = UISearchTextField()
-        searchField.placeholder = "Поиск"
-        searchField.delegate = self
-        searchField.font = UIFont.systemFont(ofSize: 17)
-        searchField.translatesAutoresizingMaskIntoConstraints = false
-        return searchField
-    }
-    
-    func createNavigationBar() -> HabitNavigationBar {
-        HabitNavigationBar(frame: .zero, habitBarDelegate: self)
-    }
-    
-    func createHabitsCollection() -> UICollectionView {
-        let layout = UICollectionViewFlowLayout()
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.register(HabitViewCell.self, forCellWithReuseIdentifier: HabitViewCell.cellIdentifier)
-        collectionView.register(HabitsSectionHeaderView.self,
-                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
-                                withReuseIdentifier: HabitsSectionHeaderView.viewIdentifier)
-        collectionView.dataSource = self
-        collectionView.delegate = self
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        return collectionView
-    }
-    
-    func setupSubviews() {
-        view.addSubview(navBar)
-        view.addSubview(searchField)
-        view.addSubview(habitsCollection)
-        addEmptyStateView()
-    }
-    
-    func updateEmptyStateVisibility() {
-        emptyStateView.isHidden = !categories.isEmpty && !visibleCategories.isEmpty
-        emptyStateView.placeholderType = categories.isEmpty ? .noData : .emptyList
-    }
-    
-    func addEmptyStateView() {
-        view.addSubview(emptyStateView)
-        updateEmptyStateVisibility()
-    }
-    
-    func setupConstraints() {
-        NSLayoutConstraint.activate([
-            navBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            navBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            navBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            
-            searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            searchField.topAnchor.constraint(equalTo: navBar.bottomAnchor, constant: 7),
-            searchField.heightAnchor.constraint(equalToConstant: 36),
-            searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            
-            habitsCollection.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            habitsCollection.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 10),
-            habitsCollection.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            habitsCollection.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            
-            emptyStateView.centerXAnchor.constraint(equalTo: habitsCollection.centerXAnchor),
-            emptyStateView.centerYAnchor.constraint(equalTo: habitsCollection.centerYAnchor)
-        ])
-    }
-}
-
-// MARK: - GeometricParams
-
+/// Структура для хранения параметров геометрии коллекции
 private struct GeometricParams {
     let cellCount: Int
     let leftInset: CGFloat
@@ -417,5 +41,301 @@ private struct GeometricParams {
         self.rightInset = rightInset
         self.cellSpacing = cellSpacing
         self.paddingWidth = leftInset + rightInset + CGFloat(cellCount - 1) * cellSpacing
+    }
+}
+
+// MARK: - Class Definition
+
+/// Контроллер для отображения и управления трекерами
+final class HabitsViewController: UIViewController {
+    
+    // MARK: - Private Properties
+    
+    private lazy var dataProvider: DataProviderProtocol = { createDataProvider() }()
+    private var currentDate: Date = Date()
+    private var searchTextFilter: String = ""
+    private lazy var navigationBar = { createNavigationBar() }()
+    private lazy var searchTextField = { createSearchTextField() }()
+    private lazy var collectionView = { createCollectionView() }()
+    private lazy var emptyCollectionPlaceholder = { EmptyStateView() }()
+    private let params = GeometricParams(cellCount: 2,
+                                         leftInset: 16,
+                                         rightInset: 16,
+                                         cellSpacing: 9)
+    
+    // MARK: - Lifecycle
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        view.backgroundColor = .ypWhiteDay
+        
+        // Загрузим мок-данные в БД для тестирования пока нет функциональности добавления категорий
+        // MockDataGenerator.setupRecords(with: dataProvider)
+        
+        addSubviews()
+        addConstraints()
+        loadData()
+        
+        // Для скрытия курсора с поля ввода при тапе вне поля ввода и вне клавиатуры
+        let anyTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleAnyTap))
+        view.addGestureRecognizer(anyTapGesture)
+    }
+    
+    // MARK: - Actions
+    
+    @objc private func handleAnyTap(_ sender: UITapGestureRecognizer) {
+        searchTextField.resignFirstResponder()
+    }
+    
+    // MARK: - Private Methods
+    
+    private func createDataProvider() -> DataProvider {
+        return DataProvider(delegate: self)
+    }
+    
+    private func loadData() {
+        dataProvider.setDateFilter(with: currentDate)
+        dataProvider.loadData()
+        collectionView.reloadData()
+        updatePlaceholderType()
+    }
+}
+
+// MARK: - Extensions
+
+// MARK: - NewTrackerSaverDelegate
+extension HabitsViewController: NewTrackerSaverDelegate {
+    func save(tracker: Tracker, in category: TrackerCategory) {
+        dataProvider.save(tracker: tracker, in: category)
+        dataProvider.loadData() // Обновляем данные
+        collectionView.reloadData()
+        updatePlaceholderType()
+        dismiss(animated: true)
+    }
+}
+
+// MARK: - TrackerViewCellDelegate
+extension HabitsViewController: TrackerViewCellProtocol {
+    func trackerDoneButtonDidSwitched(to isCompleted: Bool, at indexPath: IndexPath) {
+        guard let cell = collectionView.cellForItem(at: indexPath) as? HabitCell,
+              let trackerID = cell.tracker?.trackerID else { return }
+        dataProvider.switchTracker(withID: trackerID, to: isCompleted, for: currentDate)
+        cell.isCompleted = isCompleted
+        cell.quantity = dataProvider.getCompletedRecordsForTracker(at: indexPath)
+    }
+}
+
+// MARK: - TrackersBarControllerProtocol
+extension HabitsViewController: TrackersBarControllerProtocol {
+    func currentDateDidChange(for selectedDate: Date) {
+        currentDate = selectedDate
+        dataProvider.setDateFilter(with: selectedDate)
+        collectionView.reloadData()
+        updatePlaceholderType()
+    }
+    
+    func addTrackerButtonDidTapped() {
+        searchTextField.resignFirstResponder()
+        let selectTrackerTypeViewController = HabitTypeSelectionViewController()
+        selectTrackerTypeViewController.saverDelegate = self
+        selectTrackerTypeViewController.dataProvider = dataProvider
+        selectTrackerTypeViewController.modalPresentationStyle = .automatic
+        present(selectTrackerTypeViewController, animated: true)
+    }
+}
+
+// MARK: - UITextFieldDelegate
+extension HabitsViewController: UITextFieldDelegate {
+    func textFieldDidChangeSelection(_ textField: UITextField) {
+        searchTextFilter = textField.text?.trimmingCharacters(in: .whitespaces).lowercased() ?? ""
+        dataProvider.setSearchTextFilter(with: searchTextFilter)
+        collectionView.reloadData()
+        updatePlaceholderType()
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        searchTextField.resignFirstResponder()
+    }
+}
+
+// MARK: - UICollectionViewDataSource
+extension HabitsViewController: UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        dataProvider.numberOfSections
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        dataProvider.numberOfRows(in: section)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: HabitCell.cellIdentifier,
+            for: indexPath) as? HabitCell,
+              let tracker = dataProvider.object(at: indexPath)
+        else { return UICollectionViewCell() }
+        
+        cell.delegate = self
+        cell.indexPath = indexPath
+        cell.isDoneButtonEnabled = !currentDate.isGreater(than: Date())
+        cell.tracker = tracker
+        return cell
+    }
+}
+
+// MARK: - UICollectionViewDelegateFlowLayout
+extension HabitsViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        CGSize(
+            width: (collectionView.frame.width - params.paddingWidth) / CGFloat(params.cellCount),
+            height: 90 + HabitCell.quantityCardHeight
+        )
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        minimumInteritemSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        return params.cellSpacing
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        insetForSectionAt section: Int
+    ) -> UIEdgeInsets {
+        UIEdgeInsets(top: 16, left: params.leftInset, bottom: 12, right: params.rightInset)
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        minimumLineSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        return 0
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        viewForSupplementaryElementOfKind kind: String,
+        at indexPath: IndexPath
+    ) -> UICollectionReusableView {
+        if kind == UICollectionView.elementKindSectionHeader,
+           let view = collectionView.dequeueReusableSupplementaryView(
+            ofKind: kind,
+            withReuseIdentifier: HabitsSectionHeaderView.viewIdentifier,
+            for: indexPath
+           ) as? HabitsSectionHeaderView {
+            view.headerLabel.text = dataProvider.getCategoryNameForTracker(at: indexPath)
+            return view
+        } else {
+            return UICollectionReusableView()
+        }
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        referenceSizeForHeaderInSection section: Int
+    ) -> CGSize {
+        return CGSize(width: collectionView.frame.width, height: 18)
+    }
+}
+
+// MARK: - DataProviderDelegate
+extension HabitsViewController: DataProviderDelegate {
+    func didUpdateIndexPath(_ updatedIndexes: UpdatedIndexes) {
+        collectionView.performBatchUpdates {
+            collectionView.deleteItems(at: updatedIndexes.deletedIndexes)
+            collectionView.insertItems(at: updatedIndexes.insertedIndexes)
+            
+            if !updatedIndexes.deletedSections.isEmpty {
+                collectionView.deleteSections(updatedIndexes.deletedSections)
+            }
+            if !updatedIndexes.insertedSections.isEmpty {
+                collectionView.insertSections(updatedIndexes.insertedSections)
+            }
+        }
+    }
+}
+
+// MARK: - Layout
+private extension HabitsViewController {
+    func createSearchTextField() -> UISearchTextField {
+        let searchField = UISearchTextField()
+        searchField.placeholder = "Поиск"
+        searchField.delegate = self
+        searchField.font = UIFont.systemFont(ofSize: 17)
+        searchField.translatesAutoresizingMaskIntoConstraints = false
+        return searchField
+    }
+    
+    func createNavigationBar() -> HabitNavigationBar {
+        let bar = HabitNavigationBar(frame: .zero, trackerBarDelegate: self)
+        return bar
+    }
+    
+    func createCollectionView() -> UICollectionView {
+        let layout = UICollectionViewFlowLayout()
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.register(HabitCell.self, forCellWithReuseIdentifier: HabitCell.cellIdentifier)
+        collectionView.register(HabitsSectionHeaderView.self,
+                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                                withReuseIdentifier: HabitsSectionHeaderView.viewIdentifier)
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        return collectionView
+    }
+    
+    func addSubviews() {
+        view.addSubview(navigationBar)
+        view.addSubview(searchTextField)
+        view.addSubview(collectionView)
+        addPlaceholder()
+    }
+    
+    func updatePlaceholderType() {
+        if dataProvider.numberOfObjects != 0 {
+            emptyCollectionPlaceholder.isHidden = true
+        } else if searchTextFilter.isEmpty {
+            emptyCollectionPlaceholder.isHidden = false
+            emptyCollectionPlaceholder.placeholderType = .noData
+        } else {
+            emptyCollectionPlaceholder.isHidden = false
+            emptyCollectionPlaceholder.placeholderType = .emptyList
+        }
+    }
+    
+    func addPlaceholder() {
+        view.addSubview(emptyCollectionPlaceholder)
+        emptyCollectionPlaceholder.isHidden = true
+    }
+    
+    func addConstraints() {
+        NSLayoutConstraint.activate([
+            navigationBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            navigationBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            navigationBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            
+            searchTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            searchTextField.topAnchor.constraint(equalTo: navigationBar.bottomAnchor, constant: 7),
+            searchTextField.heightAnchor.constraint(equalToConstant: 36),
+            searchTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.topAnchor.constraint(equalTo: searchTextField.bottomAnchor, constant: 10),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
+            emptyCollectionPlaceholder.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
+            emptyCollectionPlaceholder.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor)
+        ])
     }
 }

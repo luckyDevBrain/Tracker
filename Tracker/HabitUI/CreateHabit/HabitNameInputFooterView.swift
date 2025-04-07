@@ -9,46 +9,31 @@ import UIKit
 
 // MARK: - Class Definition
 
-/// Кастомный футер для ввода названия привычки с предупреждением о лимите символов
+/// Представление для отображения футера с текстом ограничения ввода имени трекера
 class HabitNameInputFooterView: UIView {
     
-    // MARK: - Private Properties
+    // MARK: - Initializers
     
-    private let characterLimitLabel: UILabel = {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 17, weight: .regular)
         label.textColor = .ypRed
         label.textAlignment = .center
-        label.text = "Максимум 38 символов"
+        label.text = "Ограничение 38 символов"
         label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    // MARK: - Initializers
-    
-    /// Инициализирует футер с заданным фреймом
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupView()
-    }
-    
-    /// Инициализирует футер из storyboard или nib
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupView()
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    // MARK: - Private Methods
-    
-    /// Настраивает содержимое и констрейнты футера
-    private func setupView() {
-        addSubview(characterLimitLabel)
+        addSubview(label)
+        
         NSLayoutConstraint.activate([
-            characterLimitLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
-            characterLimitLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            characterLimitLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
-            characterLimitLabel.bottomAnchor.constraint(equalTo: bottomAnchor)
+            label.leadingAnchor.constraint(equalTo: leadingAnchor),
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }

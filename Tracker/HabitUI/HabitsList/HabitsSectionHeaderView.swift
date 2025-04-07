@@ -9,17 +9,20 @@ import UIKit
 
 // MARK: - Class Definition
 
-/// Заголовок секции для отображения категорий привычек
 final class HabitsSectionHeaderView: UICollectionReusableView {
-    
-    // MARK: - Static Properties
-    
-    static let viewIdentifier = "habitsSectionHeader"
     
     // MARK: - Public Properties
     
-    /// Метка для текста заголовка секции
-    let headerLabel = UILabel()
+    static let viewIdentifier = "habitsSectionHeader"
+    
+    // MARK: - UI Elements
+    
+    lazy var headerLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 19, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
     // MARK: - Initializers
     
@@ -35,10 +38,11 @@ final class HabitsSectionHeaderView: UICollectionReusableView {
     // MARK: - Private Methods
     
     private func setupView() {
-        headerLabel.font = UIFont.systemFont(ofSize: 19, weight: .bold)
-        headerLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(headerLabel)
-        
+        setupConstraints()
+    }
+    
+    private func setupConstraints() {
         NSLayoutConstraint.activate([
             headerLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 28),
             headerLabel.topAnchor.constraint(equalTo: topAnchor)

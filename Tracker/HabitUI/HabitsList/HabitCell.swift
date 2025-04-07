@@ -7,50 +7,33 @@
 
 import UIKit
 
-// MARK: - Protocol
+// MARK: - Protocols
 
 protocol TrackerViewCellProtocol: AnyObject {
-    func trackerDoneButtonDidTapped(for trackerID: UUID)
-    func trackerCounterValue(for trackerID: UUID) -> Int
+    func trackerDoneButtonDidSwitched(to isCompleted: Bool, at indexPath: IndexPath)
 }
 
 // MARK: - Class Definition
 
-/// Ячейка коллекции для отображения привычки
-final class HabitViewCell: UICollectionViewCell {
+final class HabitCell: UICollectionViewCell {
     
-    // MARK: - Static Properties
+    // MARK: - Public Properties
     
     static let cellIdentifier = "habitCell"
     static let quantityCardHeight = CGFloat(58)
     
-    // MARK: - Public Properties
-    
     weak var delegate: TrackerViewCellProtocol?
-    var trackerID: UUID?
+    var indexPath: IndexPath?
     
-    var cellColor: UIColor? {
+    var tracker: Tracker? {
         didSet {
-            trackerView.backgroundColor = cellColor
-            doneButton.backgroundColor = cellColor
-        }
-    }
-    
-    var cellName: String? {
-        didSet {
-            cellNameLabel.text = cellName
-        }
-    }
-    
-    var emoji: String? {
-        didSet {
-            emojiLabel.text = emoji
-        }
-    }
-    
-    var pinned: Bool = false {
-        didSet {
-            pinnedImageView.image = pinned ? pinImage : UIImage()
+            guard let tracker else { return }
+            cellName = tracker.name
+            cellColor = tracker.color?.color() ?? .clear
+            emoji = tracker.emoji
+            quantity = tracker.completedCounter
+            isRegular = tracker.isRegular
+            isCompleted = tracker.isCompleted
         }
     }
     
@@ -65,9 +48,15 @@ final class HabitViewCell: UICollectionViewCell {
         }
     }
     
+    var isRegular: Bool? {
+            didSet {
+                quantityLabel.isHidden = isRegular == false
+            }
+        }
+    
     var isCompleted: Bool? {
         didSet {
-            configureDoneButton()
+            doneButton.setTitle((isCompleted == true) ? "✓" : "＋", for: .normal)
         }
     }
     
@@ -82,14 +71,42 @@ final class HabitViewCell: UICollectionViewCell {
     private let pinImage = UIImage(systemName: "pin.fill") ?? UIImage()
     private let fontSize = CGFloat(12)
     private let buttonRadius = CGFloat(17)
+    
     private var buttonLabelText: String { (isCompleted == true) ? "✓" : "＋" }
     
-    private lazy var trackerView = { createTrackerView() }()
-    private lazy var cellNameLabel = { createNameLabel() }()
-    private lazy var emojiLabel = { createEmojiLabel() }()
-    private lazy var pinnedImageView = { createPinnedImageView() }()
-    private lazy var quantityLabel = { createCounterLabel() }()
-    private lazy var doneButton = { createDoneButton() }()
+    private var cellColor: UIColor? {
+        didSet {
+            trackerView.backgroundColor = cellColor
+            doneButton.backgroundColor = cellColor
+        }
+    }
+    
+    private var cellName: String? {
+        didSet {
+            cellNameLabel.text = cellName
+        }
+    }
+    
+    private var emoji: String? {
+        didSet {
+            emojiLabel.text = emoji
+        }
+    }
+    
+    private var pinned: Bool = false {
+        didSet {
+            pinnedImageView.image = pinned ? pinImage : UIImage()
+        }
+    }
+    
+    // MARK: - UI Elements
+    
+    private lazy var trackerView = createTrackerView()
+    private lazy var cellNameLabel = createNameLabel()
+    private lazy var emojiLabel = createEmojiLabel()
+    private lazy var pinnedImageView = createPinnedImagedView()
+    private lazy var quantityLabel = createCounterLabel()
+    private lazy var doneButton = createDoneButton()
     
     // MARK: - Initializers
     
@@ -105,31 +122,37 @@ final class HabitViewCell: UICollectionViewCell {
     // MARK: - Actions
     
     @objc private func doneButtonDidTap() {
-        guard let trackerID else {
+        guard let indexPath else {
             assertionFailure("Не удалось определить ID трекера")
             return
         }
+        
         guard isDoneButtonEnabled == true else { return }
         
-        isCompleted = !(isCompleted ?? false)
-        delegate?.trackerDoneButtonDidTapped(for: trackerID)
-        quantity = delegate?.trackerCounterValue(for: trackerID)
+        let isButtonChecked = !(isCompleted ?? false)
+        delegate?.trackerDoneButtonDidSwitched(to: isButtonChecked, at: indexPath)
+    }
+}
+
+// MARK: - Private Methods
+
+private extension HabitCell {
+    
+    // MARK: - UI Configuration
+    
+    func createTrackerView() -> UIView {
+        let trackerView = UIView()
+        trackerView.layer.cornerRadius = 16
+        trackerView.layer.masksToBounds = true
+        trackerView.translatesAutoresizingMaskIntoConstraints = false
+        
+        trackerView.addSubview(cellNameLabel)
+        trackerView.addSubview(emojiLabel)
+        trackerView.addSubview(pinnedImageView)
+        return trackerView
     }
     
-    // MARK: - Private Methods
-    
-    private func createTrackerView() -> UIView {
-        let view = UIView()
-        view.layer.cornerRadius = 16
-        view.layer.masksToBounds = true
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(cellNameLabel)
-        view.addSubview(emojiLabel)
-        view.addSubview(pinnedImageView)
-        return view
-    }
-    
-    private func createNameLabel() -> UILabel {
+    func createNameLabel() -> UILabel {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
         label.textColor = .white
@@ -140,7 +163,7 @@ final class HabitViewCell: UICollectionViewCell {
         return label
     }
     
-    private func createEmojiLabel() -> UILabel {
+    func createEmojiLabel() -> UILabel {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
         label.textAlignment = .center
@@ -153,38 +176,37 @@ final class HabitViewCell: UICollectionViewCell {
         return label
     }
     
-    private func createPinnedImageView() -> UIImageView {
-        let imageView = UIImageView(image: UIImage())
+    func createPinnedImagedView() -> UIImageView {
+        let imageView = UIImageView()
         imageView.tintColor = .white
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }
     
-    private func createCounterLabel() -> UILabel {
+    func createCounterLabel() -> UILabel {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
-        label.textColor = .ypBlackDay
+        label.tintColor = .ypBlackDay
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }
     
-    private func createDoneButton() -> UIButton {
+    func createDoneButton() -> UIButton {
         let button = UIButton()
         button.layer.cornerRadius = buttonRadius
         button.layer.masksToBounds = true
         button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .bold)
         button.titleLabel?.textAlignment = .center
+        button.titleLabel?.contentMode = .center
         button.tintColor = .white
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(doneButtonDidTap), for: .touchUpInside)
         return button
     }
     
-    private func configureDoneButton() {
-        doneButton.setTitle(buttonLabelText, for: .normal)
-    }
+    // MARK: - Layout Setup
     
-    private func addSubviews() {
+    func addSubviews() {
         let quantityView = UIView()
         quantityView.translatesAutoresizingMaskIntoConstraints = false
         quantityView.addSubview(quantityLabel)
@@ -210,7 +232,7 @@ final class HabitViewCell: UICollectionViewCell {
             quantityLabel.trailingAnchor.constraint(lessThanOrEqualTo: doneButton.leadingAnchor, constant: -8),
             
             doneButton.centerYAnchor.constraint(equalTo: quantityLabel.centerYAnchor),
-            doneButton.widthAnchor.constraint(equalToConstant: buttonRadius * 2),
+            doneButton.widthAnchor.constraint(equalToConstant: buttonRadius*2),
             doneButton.heightAnchor.constraint(equalTo: doneButton.widthAnchor),
             doneButton.trailingAnchor.constraint(equalTo: quantityView.trailingAnchor, constant: -12),
             

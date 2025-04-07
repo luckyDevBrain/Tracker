@@ -9,103 +9,94 @@ import UIKit
 
 // MARK: - Class Definition
 
+/// Контроллер для выбора типа создаваемого трекера
 final class HabitTypeSelectionViewController: UIViewController {
     
     // MARK: - Public Properties
     
-    weak var habitSaverDelegate: HabitSaverDelegate?
+    weak var saverDelegate: NewTrackerSaverDelegate?
+    var dataProvider: DataProviderProtocol?
     
     // MARK: - Private Properties
     
-    private lazy var regularHabitButton = { CircularButton(title: "Привычка") }()
+    private lazy var habitButton = { CircularButton(title: "Привычка") }()
     private lazy var irregularEventButton = { CircularButton(title: "Нерегулярное событие") }()
     
     // MARK: - Lifecycle
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        setupSubviews()
+        addButtonTargets()
+    }
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
     
-    override func viewDidLoad() {
-            super.viewDidLoad()
-            setupUI()
-            setupButtonActions()
-        }
-
-        // MARK: - Private Methods
-
-        private func handleHabitCreation(isRegular: Bool) {
-            let trackerVC = NewHabitViewController()
-            trackerVC.isRegular = isRegular
-            trackerVC.habitSaverDelegate = habitSaverDelegate
-            trackerVC.categories = (habitSaverDelegate as? HabitsViewController)?.categories ?? []
-            present(trackerVC, animated: true)
-        }
-
-        private func setupButtonActions() {
-            regularHabitButton.addTarget(
-                self,
-                action: #selector(regularHabitButtonTapped),
-                for: .touchUpInside
-            )
-            irregularEventButton.addTarget(
-                self,
-                action: #selector(irregularEventButtonTapped),
-                for: .touchUpInside
-            )
-        }
-
-        // MARK: - Actions
-
-        @objc private func regularHabitButtonTapped() {
-            handleHabitCreation(isRegular: true)
-        }
-
-        @objc private func irregularEventButtonTapped() {
-            handleHabitCreation(isRegular: false)
-        }
+    // MARK: - Actions
+    
+    @objc private func habitButtonDidTap() {
+        createTracker(isRegular: true)
     }
-
-    // MARK: - UI Setup
-
-    private extension HabitTypeSelectionViewController {
-
-        func setupUI() {
-            view.backgroundColor = .ypWhiteDay
-            setupTitleLabel()
-            setupButtonStack()
-        }
-
-        func setupTitleLabel() {
-            let titleLabel = UILabel()
-            titleLabel.text = "Создание трекера"
-            titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-            titleLabel.textColor = .ypBlackDay
-            titleLabel.textAlignment = .center
-            titleLabel.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(titleLabel)
-
-            NSLayoutConstraint.activate([
-                titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 27)
-            ])
-        }
-
-        func setupButtonStack() {
-            let buttonStack = UIStackView(arrangedSubviews: [regularHabitButton, irregularEventButton])
-            buttonStack.axis = .vertical
-            buttonStack.spacing = 16
-            buttonStack.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(buttonStack)
-
-            NSLayoutConstraint.activate([
-                buttonStack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                buttonStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-                buttonStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-                buttonStack.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 43),
-
-                regularHabitButton.heightAnchor.constraint(equalToConstant: 60),
-                irregularEventButton.heightAnchor.constraint(equalTo: regularHabitButton.heightAnchor)
-            ])
-        }
+    
+    @objc private func irregularEventButtonDidTap() {
+        createTracker(isRegular: false)
     }
+    
+    // MARK: - Private Methods
+    
+    private func createTracker(isRegular: Bool) {
+        let viewController = NewHabitViewController()
+        viewController.isRegular = isRegular
+        viewController.saverDelegate = saverDelegate
+        viewController.dataProvider = dataProvider
+        present(viewController, animated: true)
+    }
+    
+    private func addButtonTargets() {
+        habitButton.addTarget(
+            self,
+            action: #selector(habitButtonDidTap),
+            for: .touchUpInside
+        )
+        irregularEventButton.addTarget(
+            self,
+            action: #selector(irregularEventButtonDidTap),
+            for: .touchUpInside
+        )
+    }
+}
+
+// MARK: - Extensions
+
+// MARK: - Layout
+private extension HabitTypeSelectionViewController {
+    func setupSubviews() {
+        view.backgroundColor = .ypWhiteDay
+        
+        let titleLabel = TitleLabel(title: "Создание трекера")
+        view.addSubview(titleLabel)
+        
+        let vButtonStackView = UIStackView(arrangedSubviews: [habitButton, irregularEventButton])
+        vButtonStackView.axis = .vertical
+        vButtonStackView.spacing = 16
+        
+        vButtonStackView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(vButtonStackView)
+        
+        NSLayoutConstraint.activate([
+            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 27),
+            
+            vButtonStackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            vButtonStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            vButtonStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            vButtonStackView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 43),
+            
+            habitButton.heightAnchor.constraint(equalToConstant: 60),
+            irregularEventButton.heightAnchor.constraint(equalTo: habitButton.heightAnchor),
+        ])
+    }
+}

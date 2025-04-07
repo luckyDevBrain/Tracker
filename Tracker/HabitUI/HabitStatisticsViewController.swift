@@ -9,12 +9,17 @@ import UIKit
 
 // MARK: - Class Definition
 
-/// Контроллер для отображения статистики привычек (заглушка)
-final class HabitStatisticsViewController: UIViewController {
-    
+final class StatisticsViewController: UIViewController {
+
     // MARK: - Private Properties
     
-    private lazy var placeholderLabel = { createPlaceholderLabel() }()
+    private lazy var infoLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Продолжение следует..."
+        label.font = UIFont.systemFont(ofSize: 24, weight: .medium)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
     
     // MARK: - Lifecycle
     
@@ -22,24 +27,21 @@ final class HabitStatisticsViewController: UIViewController {
         super.viewDidLoad()
         setupView()
     }
-    
+
     // MARK: - Private Methods
     
     private func setupView() {
         view.backgroundColor = .ypWhiteDay
-        view.addSubview(placeholderLabel)
+        setupLabel()
+    }
+
+    private func setupLabel() {
+        
+        view.addSubview(infoLabel)
         
         NSLayoutConstraint.activate([
-            placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            placeholderLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            infoLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            infoLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
-    }
-    
-    private func createPlaceholderLabel() -> UILabel {
-        let label = UILabel()
-        label.text = "Продолжение следует..."
-        label.font = UIFont.systemFont(ofSize: 24, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
     }
 }

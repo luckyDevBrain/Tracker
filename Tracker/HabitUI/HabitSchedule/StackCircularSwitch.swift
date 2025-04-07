@@ -7,30 +7,37 @@
 
 import UIKit
 
-/// Переключатель с круглыми углами и настраиваемым состоянием
+// MARK: - Class Definition
+
+/// Представление с переключателем в стиле StackRoundedView
 class StackCircularSwitch: StackCircularView {
     
     // MARK: - Public Properties
     
-    /// Состояние переключателя (включен/выключен)
     var isOn: Bool {
         get {
-            return switchControl.isOn
+            return switchView.isOn
         }
         set {
-            switchControl.isOn = newValue
+            switchView.isOn = newValue
         }
     }
     
     // MARK: - Private Properties
     
-    private lazy var switchControl = { createSwitchControl() }()
+    private lazy var switchView = { createSwitchView() }()
     
     // MARK: - Initializers
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setupSwitch()
+        
+        addSubview(switchView)
+        
+        NSLayoutConstraint.activate([
+            switchView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            switchView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16)
+        ])
     }
     
     required init?(coder: NSCoder) {
@@ -39,16 +46,7 @@ class StackCircularSwitch: StackCircularView {
     
     // MARK: - Private Methods
     
-    private func setupSwitch() {
-        addSubview(switchControl)
-        
-        NSLayoutConstraint.activate([
-            switchControl.centerYAnchor.constraint(equalTo: centerYAnchor),
-            switchControl.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16)
-        ])
-    }
-    
-    private func createSwitchControl() -> UISwitch {
+    private func createSwitchView() -> UISwitch {
         let switchView = UISwitch()
         switchView.setOn(false, animated: true)
         switchView.onTintColor = .ypBlue
