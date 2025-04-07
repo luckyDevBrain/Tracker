@@ -7,11 +7,6 @@
 
 import Foundation
 
-// MARK: - Protocol
-
 protocol PropertyCellProtocol {
-    
-    // MARK: - Public Methods
-    
     func config(with property: String)
 }

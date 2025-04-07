@@ -7,50 +7,43 @@
 
 import UIKit
 
-// MARK: - Class Definition
+class RoundedViewsStackView: UIStackView {
 
-/// Стек с видами, имеющими скругленные углы в зависимости от позиции
-final class CircularViewsStackView: UIStackView {
-    
-    // MARK: - Initializers
-    
     override init(frame: CGRect) {
         super.init(frame: .zero)
     }
-    
+
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    /// Инициализирует стек с заданными подвидами и применяет стили скругления
-    convenience init(arrangedSubviews: [StackCircularView]) {
+
+    convenience init(arrangedSubviews: [StackRoundedView]) {
         self.init(frame: .zero)
         axis = .vertical
         alignment = .fill
         distribution = .equalSpacing
-        setupCircularStyles(for: arrangedSubviews)
-    }
-    
-    // MARK: - Private Methods
-    
-    private func setupCircularStyles(for subviews: [StackCircularView]) {
-        guard !subviews.isEmpty else { return }
-        
-        if subviews.count == 1 {
-            subviews[0].circularCornerStyle = .topAndBottom
-        } else {
-            for (index, subview) in subviews.enumerated() {
-                switch index {
+
+        if arrangedSubviews.isEmpty {
+            return
+        }
+
+        if arrangedSubviews.count == 1 {
+            arrangedSubviews[0].roundedCornerStyle = .topAndBottom
+            addArrangedSubview(arrangedSubviews[0])
+        }
+        else if arrangedSubviews.count > 1 {
+            for (i, subview) in arrangedSubviews.enumerated() {
+                switch i {
                 case 0:
-                    subview.circularCornerStyle = .topOnly
-                case subviews.count - 1:
-                    subview.circularCornerStyle = .bottomOnly
+                    subview.roundedCornerStyle = .topOnly
+                case arrangedSubviews.count-1:
+                    subview.roundedCornerStyle = .bottomOnly
                 default:
-                    subview.circularCornerStyle = .notCircular
+                    subview.roundedCornerStyle = .notRounded
                 }
+                addArrangedSubview(subview)
             }
         }
-        
-        subviews.forEach { addArrangedSubview($0) }
     }
+
 }

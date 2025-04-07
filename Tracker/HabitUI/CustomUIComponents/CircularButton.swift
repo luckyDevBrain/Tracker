@@ -7,75 +7,59 @@
 
 import UIKit
 
-// MARK: - Enums
-
-/// Стили для кнопки с круглыми углами
-enum CircularButtonStyle {
+enum RoundedButtonStyle {
     case normal, disabled, cancel
 }
 
-// MARK: - Class Definition
+class RoundedButton: UIButton {
 
-/// Кнопка с круглыми углами и различными стилями отображения
-class CircularButton: UIButton {
-    
-    // MARK: - Public Properties
-    
-    /// Стиль кнопки, определяющий ее внешний вид и поведение
-    var circularButtonStyle: CircularButtonStyle = .normal {
+    var roundedButtonStyle: RoundedButtonStyle = .normal {
         didSet {
-            isEnabled = circularButtonStyle != .disabled
+            isEnabled = roundedButtonStyle != .disabled
             applyStyle()
         }
     }
-    
-    // MARK: - Private Properties
-    
     private var titleText: String = ""
-    
-    // MARK: - Initializers
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    /// Инициализирует кнопку с заданным заголовком и стилем
-    convenience init(title: String, style: CircularButtonStyle = .normal) {
+
+    convenience init(title: String, style: RoundedButtonStyle = .normal) {
         self.init(frame: .zero)
-        self.circularButtonStyle = style
+        self.roundedButtonStyle = style
         self.titleText = title
         translatesAutoresizingMaskIntoConstraints = false
         applyStyle()
     }
-    
-    // MARK: - Private Methods
-    
+
     private func applyStyle() {
-        // Общие настройки
         layer.cornerRadius = 16
         layer.masksToBounds = true
-        setTitle(titleText, for: .normal)
-        titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        titleLabel?.textAlignment = .center
-        
-        // Специфичные настройки для каждого стиля
-        switch circularButtonStyle {
+        switch roundedButtonStyle {
         case .cancel:
             backgroundColor = .ypWhiteDay
             layer.borderWidth = 1
             layer.borderColor = UIColor.ypRed.cgColor
-            setTitleColor(.ypRed, for: .normal)
         case .normal:
             backgroundColor = .ypBlackDay
-            setTitleColor(.ypWhiteDay, for: .normal)
         case .disabled:
             isEnabled = false
             backgroundColor = .ypGray
+        }
+
+        setTitle(titleText, for: .normal)
+        if roundedButtonStyle == .cancel {
+            setTitleColor(.ypRed, for: .normal)
+        }
+        else {
             setTitleColor(.ypWhiteDay, for: .normal)
         }
+        titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        titleLabel?.textAlignment = .center
     }
 }
