@@ -9,7 +9,6 @@ import UIKit
 
 // MARK: - Enums
 
-/// Типы пустого состояния для отображения
 enum PlaceholderType {
     case noData
     case emptyList
@@ -17,85 +16,79 @@ enum PlaceholderType {
 
 // MARK: - Class Definition
 
-/// Представление для отображения пустого состояния с изображением и текстом
 final class EmptyStateView: UIView {
-
+    
     // MARK: - Public Properties
-
-    /// Тип пустого состояния, определяющий отображаемые изображение и текст
+    
     var placeholderType: PlaceholderType = .noData {
         didSet {
-            updatePlaceholderContent()
+            updateUIForPlaceholderType()
         }
     }
-
+    
     // MARK: - Private Properties
-
+    
     private let circleStarImage = UIImage(named: "circleStar") ?? UIImage()
     private let monocleFaceImage = UIImage(named: "monocleFace") ?? UIImage()
     private let noDataText = "Что будем отслеживать?"
     private let emptyListText = "Ничего не найдено"
-
-    private lazy var stateImageView = { createStateImageView() }()
-    private lazy var stateLabel = { createStateLabel() }()
-
-    // MARK: - Initializers
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupView()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    // MARK: - Private Methods
-
-    private func setupView() {
-        translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stateImageView)
-        addSubview(stateLabel)
-
-        NSLayoutConstraint.activate([
-            stateImageView.topAnchor.constraint(equalTo: topAnchor),
-            stateImageView.heightAnchor.constraint(equalToConstant: 80),
-            stateImageView.widthAnchor.constraint(equalToConstant: 80),
-            stateImageView.bottomAnchor.constraint(equalTo: stateLabel.topAnchor),
-            stateImageView.centerXAnchor.constraint(equalTo: stateLabel.centerXAnchor),
-
-            stateLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stateLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stateLabel.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-
-        updatePlaceholderContent()
-    }
-
-    private func createStateImageView() -> UIImageView {
+    
+    private lazy var placeholderImage: UIImageView = {
         let imageView = UIImageView(image: circleStarImage)
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
-    }
-
-    private func createStateLabel() -> UILabel {
+    }()
+    
+    private lazy var placeholderLabel: UILabel = {
         let label = UILabel()
-        label.text = noDataText
         label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
         label.textColor = .ypBlackDay
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
+    }()
+    
+    // MARK: - Initializers
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        configureView()
+        setupConstraints()
     }
-
-    private func updatePlaceholderContent() {
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: - Private Methods
+    
+    private func configureView() {
+        translatesAutoresizingMaskIntoConstraints = false
+        addSubview(placeholderImage)
+        addSubview(placeholderLabel)
+    }
+    
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            placeholderImage.topAnchor.constraint(equalTo: topAnchor),
+            placeholderImage.heightAnchor.constraint(equalToConstant: 80),
+            placeholderImage.widthAnchor.constraint(equalToConstant: 80),
+            placeholderImage.bottomAnchor.constraint(equalTo: placeholderLabel.topAnchor),
+            placeholderImage.centerXAnchor.constraint(equalTo: placeholderLabel.centerXAnchor),
+            placeholderLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            placeholderLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            placeholderLabel.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+    
+    private func updateUIForPlaceholderType() {
         switch placeholderType {
         case .noData:
-            stateImageView.image = circleStarImage
-            stateLabel.text = noDataText
+            placeholderImage.image = circleStarImage
+            placeholderLabel.text = noDataText
         case .emptyList:
-            stateImageView.image = monocleFaceImage
-            stateLabel.text = emptyListText
+            placeholderImage.image = monocleFaceImage
+            placeholderLabel.text = emptyListText
         }
     }
 }

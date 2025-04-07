@@ -7,23 +7,19 @@
 
 import UIKit
 
-// MARK: - Class Definition
+// MARK: - SceneDelegate
 
-/// Делегат сцены для настройки окна и интерфейса приложения
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     // MARK: - Properties
     
     var window: UIWindow?
-    
+
     // MARK: - Scene Lifecycle
     
-    /// Настраивает окно и корневой контроллер при подключении новой сцены
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
-        
         setupWindow(with: windowScene)
-        configureTabBarController()
     }
     
     func sceneDidDisconnect(_ scene: UIScene) { }
@@ -36,34 +32,37 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     private func setupWindow(with windowScene: UIWindowScene) {
         window = UIWindow(windowScene: windowScene)
+        window?.rootViewController = createTabBarController()
         window?.makeKeyAndVisible()
     }
-    
-    private func configureTabBarController() {
+
+    private func createTabBarController() -> UITabBarController {
         let tabBarController = UITabBarController()
-        tabBarController.tabBar.barStyle = .default
-        tabBarController.tabBar.isTranslucent = false
-        tabBarController.tabBar.backgroundColor = .ypWhiteDay
-        tabBarController.tabBar.layer.borderColor = UIColor.ypGray.cgColor
-        tabBarController.tabBar.layer.borderWidth = 1
+        configureTabBarAppearance(tabBarController.tabBar)
         
-        let habitsVC = HabitsViewController()
-        let habitsIcon = UIImage(named: "record.circle.fill") ?? UIImage()
-        habitsVC.tabBarItem = UITabBarItem(
+        let trackersVC = HabitsViewController()
+        trackersVC.tabBarItem = UITabBarItem(
             title: "Трекеры",
-            image: habitsIcon,
+            image: UIImage(named: "record.circle.fill"),
             selectedImage: nil
         )
-        
-        let statsVC = HabitStatisticsViewController()
-        let statsIcon = UIImage(systemName: "hare.fill") ?? UIImage()
-        statsVC.tabBarItem = UITabBarItem(
+
+        let statisticsVC = StatisticsViewController()
+        statisticsVC.tabBarItem = UITabBarItem(
             title: "Статистика",
-            image: statsIcon,
+            image: UIImage(systemName: "hare.fill"),
             selectedImage: nil
         )
-        
-        tabBarController.setViewControllers([habitsVC, statsVC], animated: true)
-        window?.rootViewController = tabBarController
+
+        tabBarController.viewControllers = [trackersVC, statisticsVC]
+        return tabBarController
+    }
+
+    private func configureTabBarAppearance(_ tabBar: UITabBar) {
+        tabBar.barStyle = .default
+        tabBar.isTranslucent = false
+        tabBar.backgroundColor = .ypWhiteDay
+        tabBar.layer.borderColor = UIColor.ypGray.cgColor
+        tabBar.layer.borderWidth = 1
     }
 }

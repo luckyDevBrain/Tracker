@@ -15,7 +15,7 @@ struct Tracker {
     // MARK: - Public Properties
     
     /// Уникальный идентификатор трекера
-    let trackerID = UUID()
+    let trackerID: UUID
     
     /// Заголовок трекера
     let name: String
@@ -27,8 +27,14 @@ struct Tracker {
     let emoji: String
     
     /// Цветовая схема трекера
-    let color: UIColor
+    let color: UIColor.YpColors?
     
-    /// График выполнения для регулярных привычек
+    /// расписание трекера. Устанавливается для регулярных привычек
     let schedule: [WeekDay]?
+    
+    /// true - карточка отмечена выполненной
+    let isCompleted: Bool
+    
+    /// счетчик количества выполненных
+    let completedCounter: Int
 }

@@ -9,20 +9,21 @@ import UIKit
 
 // MARK: - Protocol
 
+/// Протокол для сохранения расписания трекера
 protocol ScheduleSaverDelegate: AnyObject {
     func scheduleDidSetup(with newSchedule: [WeekDay])
 }
 
 // MARK: - Class Definition
 
-/// Контроллер для создания новой привычки или нерегулярного события
+/// Контроллер для создания нового трекера
 final class NewHabitViewController: UIViewController {
     
     // MARK: - Public Properties
     
-    weak var habitSaverDelegate: HabitSaverDelegate?
+    weak var saverDelegate: NewTrackerSaverDelegate?
+    var dataProvider: DataProviderProtocol?
     var isRegular: Bool!
-    var categories: [TrackerCategory] = []
     
     // MARK: - Private Properties
     
@@ -31,28 +32,50 @@ final class NewHabitViewController: UIViewController {
             checkIsAllParametersDidSetup()
         }
     }
-    private var category: TrackerCategory? {
+    
+    // Временная категория для тестирования
+    private lazy var category: TrackerCategory? = { initDefaultCategory() }() {
         didSet {
-            displayCategory()
             checkIsAllParametersDidSetup()
         }
     }
+    
+    private var selectedEmoji: String? {
+        didSet {
+            checkIsAllParametersDidSetup()
+        }
+    }
+    
+    private var selectedColor: String? {
+        didSet {
+            checkIsAllParametersDidSetup()
+        }
+    }
+    
+    private var emojies = [
+        "🙂", "😻", "🌺", "🐶", "❤️", "😱", "😇", "😡", "🥶",
+        "🤔", "🙌", "🍔", "🥦", "🏓", "🥇", "🎸", "🏝", "😪"
+    ]
+    
+    private var colors: [String] = UIColor.YpColors.allColorNames()
+    
     private var schedule: [WeekDay]? {
         didSet {
             checkIsAllParametersDidSetup()
         }
     }
+    
     private var isAllParametersDidSetup = false {
         didSet {
             doneButton.circularButtonStyle = isAllParametersDidSetup ? .normal : .disabled
         }
     }
     
-    private lazy var inputTrackerNameTxtField = { createTextField() }()
+    private lazy var inputTrackerNameTxtField = { createInputTextField() }()
     private lazy var categorySetupButton = { createCategorySetupButton() }()
     private lazy var scheduleSetupButton = { createScheduleSetupButton() }()
-    private lazy var emojiCollectionView = { createCollectionView(title: "Emoji") }()
-    private lazy var colorCollectionView = { createCollectionView(title: "Цвет") }()
+    private lazy var emojiCollectionView = { createEmojiCollectionView() }()
+    private lazy var colorCollectionView = { createColorCollectionView() }()
     private lazy var cancelButton = { createCancelButton() }()
     private lazy var doneButton = { createDoneButton() }()
     
@@ -62,45 +85,29 @@ final class NewHabitViewController: UIViewController {
         super.viewDidLoad()
         setupSubviews()
         displayData()
+        
+        // Для скрытия курсора с поля ввода при тапе вне поля ввода и вне клавиатуры
         let anyTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleAnyTap))
+        anyTapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(anyTapGesture)
-        
-        // Используем новый метод для подписки на событие editingChanged
-        inputTrackerNameTxtField.addTargetForEditingChanged(self, action: #selector(textFieldDidChange))
-        
-        // Устанавливаем категорию по умолчанию из переданного массива categories
-        if !categories.isEmpty {
-            category = categories.first
-        } else {
-            // Если categories пуст, создаём новую категорию как запасной вариант
-            category = TrackerCategory(
-                categoryID: UUID(),
-                name: "Занятия спортом",
-                trackersInCategory: []
-            )
-        }
     }
     
     // MARK: - Actions
     
-    @objc private func textFieldDidChange(_ textField: UITextField) {
-        trackerName = textField.text
-        checkIsAllParametersDidSetup()
-    }
-    
     @objc private func handleAnyTap() {
-        trackerName = inputTrackerNameTxtField.inputText
+        trackerName = inputTrackerNameTxtField.text
         _ = inputTrackerNameTxtField.resignFirstResponder()
-        checkIsAllParametersDidSetup()
     }
     
     @objc private func categoryButtonDidTap() {
+        // TODO: next sprint
         print("Category did tap")
     }
     
     @objc private func scheduleButtonDidTap() {
         _ = inputTrackerNameTxtField.resignFirstResponder()
-        trackerName = inputTrackerNameTxtField.inputText
+        trackerName = inputTrackerNameTxtField.text
+        
         let scheduleViewController = HabitScheduleViewController()
         scheduleViewController.schedule = schedule
         scheduleViewController.saveScheduleDelegate = self
@@ -108,24 +115,50 @@ final class NewHabitViewController: UIViewController {
     }
     
     @objc private func doneButtonDidTap() {
-        guard let categoryID = category?.categoryID else {
-            assertionFailure("Не удалось определить категорию трекера при сохранении")
+        guard let selectedEmoji else {
+            assertionFailure("Не удалось определить emoji карточки трекера при сохранении")
             return
         }
+        guard let selectedColor,
+              let color = UIColor.YpColors(rawValue: selectedColor) else {
+            assertionFailure("Не удалось определить цвет карточки трекера при сохранении")
+            return
+        }
+        guard let category else {
+            assertionFailure("Не удалось определить категорию для сохранения трекера")
+            return
+        }
+        
         if inputTrackerNameTxtField.isFirstResponder {
             if inputTrackerNameTxtField.resignFirstResponder() {
-                trackerName = inputTrackerNameTxtField.inputText
+                trackerName = inputTrackerNameTxtField.text
             } else {
-                assertionFailure("Не удалось завершить ввод названия трекера при сохранении")
+                assertionFailure("Не удалось завершить ввода названия трекера при сохранении")
                 return
             }
         }
-        guard let trackerName, !trackerName.isEmpty else {
+        
+        guard let trackerName else {
             assertionFailure("Не удалось определить название трекера при сохранении")
             return
         }
-        let newTracker = Tracker(name: trackerName, isRegular: isRegular, emoji: "🏓", color: .ypColorSelection11, schedule: schedule)
-        habitSaverDelegate?.save(tracker: newTracker, in: categoryID)
+        
+        if trackerName.isEmpty {
+            isAllParametersDidSetup = false
+            return
+        }
+        
+        let newTracker = Tracker(
+            trackerID: UUID(),
+            name: trackerName,
+            isRegular: isRegular,
+            emoji: selectedEmoji,
+            color: color,
+            schedule: schedule,
+            isCompleted: false,
+            completedCounter: 0
+        )
+        saverDelegate?.save(tracker: newTracker, in: category)
     }
     
     @objc private func cancelButtonDidTap() {
@@ -134,11 +167,18 @@ final class NewHabitViewController: UIViewController {
     
     // MARK: - Private Methods
     
+    private func initDefaultCategory() -> TrackerCategory? {
+        // TODO: временный вариант инициализации категории первой попавшейся, пока нет
+        // функциональности создания категорий
+        return dataProvider?.getDefaultCategory()
+    }
+    
     private func checkIsAllParametersDidSetup() {
         isAllParametersDidSetup = trackerName?.isEmpty == false
-        && (!isRegular || schedule?.isEmpty == false)
-        && (category?.name.isEmpty == false)
-        print("trackerName: \(trackerName ?? "nil"), isRegular: \(isRegular ?? false), schedule: \(schedule?.description ?? "nil"), category: \(category?.name ?? "nil"), isAllParametersDidSetup: \(isAllParametersDidSetup)")
+            && (!isRegular || schedule?.isEmpty == false)
+            && (category?.name.isEmpty == false)
+            && (selectedEmoji?.isEmpty == false)
+            && (UIColor.YpColors(rawValue: selectedColor ?? "") != nil)
     }
     
     private func displaySchedule() {
@@ -155,28 +195,27 @@ final class NewHabitViewController: UIViewController {
     }
 }
 
-// MARK: - ScheduleSaverDelegate
+// MARK: - Extensions
 
+// MARK: - ScheduleSaverDelegate
 extension NewHabitViewController: ScheduleSaverDelegate {
     func scheduleDidSetup(with newSchedule: [WeekDay]) {
         self.schedule = newSchedule
         displaySchedule()
         dismiss(animated: true)
-        checkIsAllParametersDidSetup()
     }
 }
 
 // MARK: - UITextFieldDelegate
-
 extension NewHabitViewController: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let maxLength = 38
         let currentString = textField.text as? NSString
         let newString = currentString?.replacingCharacters(in: range, with: string) ?? ""
         if newString.count > maxLength {
-            inputTrackerNameTxtField.shouldHideMaxLengthHint = false
-        } else if !inputTrackerNameTxtField.shouldHideMaxLengthHint {
-            inputTrackerNameTxtField.shouldHideMaxLengthHint = true
+            inputTrackerNameTxtField.isMaxLengthHintHidden = false
+        } else if !inputTrackerNameTxtField.isMaxLengthHintHidden {
+            inputTrackerNameTxtField.isMaxLengthHintHidden = true
         }
         return newString.count <= maxLength
     }
@@ -186,22 +225,57 @@ extension NewHabitViewController: UITextFieldDelegate {
         return true
     }
     
-    func textFieldDidEndEditing(_ textField: UITextField) {
+    func textFieldDidEndEditing(_ textField: UITextField, reason: UITextField.DidEndEditingReason) {
+        if textField.isFirstResponder {
+            textField.resignFirstResponder()
+        }
         trackerName = textField.text
-        checkIsAllParametersDidSetup()
+    }
+}
+
+// MARK: - PropertyCollectionViewDelegate
+extension NewHabitViewController: PropertyCollectionViewDelegate {
+    func didSelectItem(at indexPath: IndexPath, for propertyType: TrackerProperty) {
+        switch propertyType {
+        case .emoji:
+            selectedEmoji = emojies[indexPath.row]
+        case .color:
+            selectedColor = colors[indexPath.row]
+        }
+    }
+}
+
+// MARK: - PropertyCollectionDataSource
+extension NewHabitViewController: PropertyCollectionDataSource {
+    func getItem(at indexPath: IndexPath, for propertyType: TrackerProperty) -> String {
+        switch propertyType {
+        case .emoji:
+            return emojies[indexPath.row]
+        case .color:
+            return colors[indexPath.row]
+        }
+    }
+    
+    func numberOfItems(in section: Int, for propertyType: TrackerProperty) -> Int {
+        switch propertyType {
+        case .emoji:
+            return emojies.count
+        case .color:
+            return colors.count
+        }
     }
 }
 
 // MARK: - Layout
-
 private extension NewHabitViewController {
     func createTitleLabel() -> TitleLabel {
         let titleText = isRegular ? "Новая привычка" : "Новое нерегулярное событие"
-        return TitleLabel(title: titleText)
+        let title = TitleLabel(title: titleText)
+        return title
     }
     
-    func createTextField() -> HabitNameInputView {
-        let textField = HabitNameInputView(delegate: self, placeholder: "Назови свою привычку")
+    func createInputTextField() -> HabitNameInputView {
+        let textField = HabitNameInputView(delegate: self, placeholder: "Введите название трекера")
         return textField
     }
     
@@ -228,41 +302,34 @@ private extension NewHabitViewController {
         stack.axis = .vertical
         stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
+        
         return stack
     }
     
-    func createCollectionView(title titleText: String) -> UIView {
-        let collectionView = UIView()
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        
-        let title = UILabel()
-        title.text = titleText
-        title.font = UIFont.systemFont(ofSize: 19, weight: .bold)
-        title.textColor = .ypBlackDay
-        title.textAlignment = .left
-        title.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.addSubview(title)
-        
-        let layout = UICollectionViewFlowLayout()
-        let collection = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collection.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.addSubview(collection)
-        
-        NSLayoutConstraint.activate([
-            title.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor, constant: 28),
-            title.topAnchor.constraint(equalTo: collectionView.topAnchor),
-            
-            collection.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor),
-            collection.topAnchor.constraint(equalTo: title.bottomAnchor),
-            collection.trailingAnchor.constraint(equalTo: collectionView.trailingAnchor),
-            collection.heightAnchor.constraint(equalToConstant: 192),
-            collection.bottomAnchor.constraint(equalTo: collectionView.bottomAnchor),
-        ])
-        return collectionView
+    func createEmojiCollectionView() -> UIView {
+        let view = TrackerPropertyCollectionView(
+            title: "Emoji",
+            propertyType: .emoji,
+            delegate: self,
+            dataSource: self
+        )
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }
+    
+    func createColorCollectionView() -> UIView {
+        let view = TrackerPropertyCollectionView(
+            title: "Цвет",
+            propertyType: .color,
+            delegate: self,
+            dataSource: self
+        )
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }
     
     func createDoneButton() -> CircularButton {
-        let button = CircularButton(title: "Сохранить")
+        let button = CircularButton(title: "Создать")
         button.circularButtonStyle = isAllParametersDidSetup ? .normal : .disabled
         button.addTarget(self, action: #selector(doneButtonDidTap), for: .touchUpInside)
         return button
@@ -280,8 +347,10 @@ private extension NewHabitViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         
         scrollView.addSubview(inputTrackerNameTxtField)
+        
         let actionButtonsView = createActionButtonsView()
         scrollView.addSubview(actionButtonsView)
+        
         scrollView.addSubview(emojiCollectionView)
         scrollView.addSubview(colorCollectionView)
         
@@ -322,8 +391,10 @@ private extension NewHabitViewController {
     
     func setupSubviews() {
         view.backgroundColor = .ypWhiteDay
+        
         let title = createTitleLabel()
         view.addSubview(title)
+        
         let scrollView = createScrollView()
         view.addSubview(scrollView)
         
