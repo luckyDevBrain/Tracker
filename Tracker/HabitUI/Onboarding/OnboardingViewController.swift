@@ -31,11 +31,12 @@ final class OnboardingViewController: UIPageViewController {
     }
 
     @objc private func startButtonDidTap() {
-        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate,
-              let window = appDelegate.window
-        else { return }
-        window.rootViewController = StartViewController()
-    }
+           guard let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+                 let window = appDelegate.window
+           else { return }
+           window.rootViewController = StartViewController()
+       }
+
 
     private func createPageViewControllers() -> [UIViewController] {
         let page1 = OnboardingPageViewController()

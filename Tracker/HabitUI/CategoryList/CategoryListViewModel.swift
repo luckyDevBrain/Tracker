@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 struct CategoryListViewModelBindings {
     let isPlaceHolderHidden: (Bool?) -> Void
@@ -29,26 +30,22 @@ protocol CategoryListViewModelProtocol: AnyObject {
     func updateEditedCategory(_ category: TrackerCategory)
 }
 
-// MARK: CategoryListViewModel
-
 final class CategoryListViewModel: CategoryListViewModelProtocol {
+
     var dataProvider: any CategoryDataProviderProtocol
     var categoriesCount: Int {
         dataProvider.numberOfObjects
     }
 
-    @Observable
-    private var isPlaceHolderHidden: Bool?
+    @Published private var isPlaceHolderHidden: Bool?
+    @Published private var selectedRow: IndexPath?
+    @Published private var editingCategory: TrackerCategory?
 
-    @Observable
-    private var selectedRow: IndexPath?
-
-    @Observable
-    private var editingCategory: TrackerCategory?
+    private var cancellables = Set<AnyCancellable>()
 
     private var selectionDelegate: CategorySelectionDelegate
     private var selectedCategory: TrackerCategory?
-    private var cellViewModels: [CategoryCellViewModelProtocol]
+    private var cellViewModels: [CategoryCellViewModelProtocol] = []
 
     init(
         dataProvider: any CategoryDataProviderProtocol,
@@ -57,7 +54,6 @@ final class CategoryListViewModel: CategoryListViewModelProtocol {
     ) {
         self.dataProvider = dataProvider
         self.selectedCategory = selectedCategory
-        self.cellViewModels = []
         self.selectionDelegate = selectionDelegate
     }
 
@@ -66,9 +62,22 @@ final class CategoryListViewModel: CategoryListViewModelProtocol {
         isPlaceHolderHidden = categoriesCount > 0
     }
 
+    func setBindings(_ bindings: CategoryListViewModelBindings) {
+        $isPlaceHolderHidden
+            .sink(receiveValue: bindings.isPlaceHolderHidden)
+            .store(in: &cancellables)
+
+        $selectedRow
+            .sink(receiveValue: bindings.selectedRow)
+            .store(in: &cancellables)
+
+        $editingCategory
+            .sink(receiveValue: bindings.editingCategory)
+            .store(in: &cancellables)
+    }
+
     func configCell(at indexPath: IndexPath) {
-        guard let category = dataProvider.object(at: indexPath) as? TrackerCategory
-        else { return }
+        guard let category = dataProvider.object(at: indexPath) as? TrackerCategory else { return }
 
         let isSelected = selectedCategory?.categoryID == category.categoryID
         cellViewModels[indexPath.item].setupModelWith(
@@ -81,18 +90,11 @@ final class CategoryListViewModel: CategoryListViewModelProtocol {
         }
     }
 
-    func setBindings(_ bindings: CategoryListViewModelBindings) {
-        self.$isPlaceHolderHidden.bind(action: bindings.isPlaceHolderHidden)
-        self.$selectedRow.bind(action: bindings.selectedRow)
-        self.$editingCategory.bind(action: bindings.editingCategory)
-    }
-
     func didSelectRow(at indexPath: IndexPath, isInitialSelection: Bool) {
         selectedRow = indexPath
         cellViewModels[indexPath.item].didSelectRow()
-        if !isInitialSelection {
-            guard let category = dataProvider.object(at: indexPath) as? TrackerCategory
-            else { return }
+        if !isInitialSelection,
+           let category = dataProvider.object(at: indexPath) as? TrackerCategory {
             selectionDelegate.updateSelected(category)
         }
     }
@@ -104,7 +106,7 @@ final class CategoryListViewModel: CategoryListViewModelProtocol {
     }
 
     func updateViewModels(deleteAt deletedIndexes: [IndexPath], insertAt insertedIndexes: [IndexPath]) {
-        deletedIndexes.sorted(by: {$0.item > $1.item}).forEach {
+        deletedIndexes.sorted(by: { $0.item > $1.item }).forEach {
             removeCellViewModel(at: $0)
         }
     }
@@ -114,9 +116,7 @@ final class CategoryListViewModel: CategoryListViewModelProtocol {
     }
 
     func editCategoryDidTap(at indexPath: IndexPath) {
-        guard let category = dataProvider.object(at: indexPath) as? TrackerCategory
-        else { return }
-
+        guard let category = dataProvider.object(at: indexPath) as? TrackerCategory else { return }
         editingCategory = category
     }
 

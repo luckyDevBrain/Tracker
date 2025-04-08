@@ -23,11 +23,8 @@ protocol CategoryViewModelProtocol {
 final class CategoryViewModel: CategoryViewModelProtocol {
     var saveCategory: ((TrackerCategory) -> Void)?
 
-    @Observable
-    private var isOkButtonEnabled: Bool?
-
-    @Observable
-    private var isCategoryDidCreated: Bool?
+    private var isOkButtonEnabled = ObservableBox<Bool?>(false)
+    private var isCategoryDidCreated = ObservableBox<Bool?>(false)
 
     private var categoryName: String?
     private var category: TrackerCategory
@@ -37,18 +34,18 @@ final class CategoryViewModel: CategoryViewModelProtocol {
     }
 
     func setBindings(_ bindings: CategoryViewModelBindings) {
-        self.$isOkButtonEnabled.bind(action: bindings.isOkButtonEnabled)
-        self.$isCategoryDidCreated.bind(action: bindings.isCategoryDidCreated)
+        isOkButtonEnabled.bind(bindings.isOkButtonEnabled)
+        isCategoryDidCreated.bind(bindings.isCategoryDidCreated)
     }
 
     func viewDidLoad() {
-        isOkButtonEnabled = false
+        isOkButtonEnabled.value = false
         textFieldDidChange(to: category.name)
     }
 
     func textFieldDidChange(to text: String?) {
         let normalizedName = normalized(categoryName: text)
-        isOkButtonEnabled = !normalizedName.isEmpty
+        isOkButtonEnabled.value = !normalizedName.isEmpty
         categoryName = normalizedName
     }
 
@@ -56,7 +53,7 @@ final class CategoryViewModel: CategoryViewModelProtocol {
         guard let categoryName else { return }
         let updatedCategory = TrackerCategory(id: category.categoryID, name: categoryName)
         saveCategory?(updatedCategory)
-        isCategoryDidCreated = true
+        isCategoryDidCreated.value = true
     }
 
     func getInitialCategoryName() -> String {

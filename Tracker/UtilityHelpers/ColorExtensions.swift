@@ -14,6 +14,9 @@ extension UIColor {
     static let ypGrayCode = UIColor(named: "ypGray")!
     static let ypRedCode = UIColor(named: "ypRed")!
     static let ypWhiteDayCode = UIColor(named: "ypWhiteDay")!
+    static let ypGradientColor1 = UIColor(named: "ypGradientColor1")!
+    static let ypGradientColor2 = UIColor(named: "ypGradientColor2")!
+    static let ypGradientColor3 = UIColor(named: "ypGradientColor3")!
 
     enum YpColors: String, CaseIterable {
         case ypColorSelectionCode1 = "ypColorSelection-1"

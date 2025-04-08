@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 struct CategoryCellViewModelBindings {
     let categoryName: (String?) -> Void
@@ -13,7 +14,7 @@ struct CategoryCellViewModelBindings {
 }
 
 protocol CategoryCellViewModelProtocol {
-    func setBinidings(_ bindings: CategoryCellViewModelBindings)
+    func setBindings(_ bindings: CategoryCellViewModelBindings)
     func setupModelWith(categoryName: String, isSelected: Bool)
     func didSelectRow()
     func didDeselectRow()
@@ -21,15 +22,19 @@ protocol CategoryCellViewModelProtocol {
 
 final class CategoryCellViewModel: CategoryCellViewModelProtocol {
 
-    @Observable
-    private var categoryName: String?
+    @Published private var categoryName: String?
+    @Published private var isSelected: Bool?
 
-    @Observable
-    private var isSelected: Bool?
+    private var cancellables = Set<AnyCancellable>()
 
-    func setBinidings(_ bindings: CategoryCellViewModelBindings) {
-        self.$categoryName.bind(action: bindings.categoryName)
-        self.$isSelected.bind(action: bindings.isSelected)
+    func setBindings(_ bindings: CategoryCellViewModelBindings) {
+        $categoryName
+            .sink(receiveValue: bindings.categoryName)
+            .store(in: &cancellables)
+
+        $isSelected
+            .sink(receiveValue: bindings.isSelected)
+            .store(in: &cancellables)
     }
 
     func setupModelWith(categoryName: String, isSelected: Bool) {

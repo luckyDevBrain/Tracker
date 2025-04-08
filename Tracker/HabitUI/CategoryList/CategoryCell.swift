@@ -46,6 +46,6 @@ class CategoryCell: UITableViewCell {
             isSelected: { [weak self] in
                 self?.accessoryType = ($0 == true) ? .checkmark : .none
             })
-        viewModel.setBinidings(bindings)
+        viewModel.setBindings(bindings)
     }
 }
