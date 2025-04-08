@@ -7,26 +7,19 @@
 
 import UIKit
 
-// MARK: - Protocol
-
-/// Протокол делегата для обработки выбора элемента в коллекции свойств
 protocol PropertyCollectionViewDelegate: AnyObject {
     func didSelectItem(at indexPath: IndexPath, for propertyType: TrackerProperty)
 }
 
-/// Протокол источника данных для коллекции свойств
 protocol PropertyCollectionDataSource: AnyObject {
     func numberOfItems(in section: Int, for propertyType: TrackerProperty) -> Int
     func getItem(at indexPath: IndexPath, for propertyType: TrackerProperty) -> String
 }
 
-// MARK: - Enums
-
-/// Типы свойств трекера (эмодзи или цвет)
 enum TrackerProperty: String {
     case emoji
     case color
-    
+
     func reuseIdentifier() -> String {
         switch self {
         case .emoji:
@@ -37,50 +30,47 @@ enum TrackerProperty: String {
     }
 }
 
-// MARK: - Class Definition
-
-/// Представление для отображения коллекции свойств трекера (эмодзи или цвета)
 final class TrackerPropertyCollectionView: UIView {
-    
-    // MARK: - Private Properties
-    
+
+    lazy var collectionView = { createCollectionView() }()
+
     private var propertyType: TrackerProperty?
     private weak var delegate: PropertyCollectionViewDelegate?
     private weak var dataSource: PropertyCollectionDataSource?
     private var title: String?
     private lazy var titleView = { createTitleView() }()
-    private lazy var collectionView = { createCollectionView() }()
-    
-    // MARK: - Initializers
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
-    
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     convenience init(
-        title: String,
-        propertyType: TrackerProperty,
-        delegate: PropertyCollectionViewDelegate,
-        dataSource: PropertyCollectionDataSource
+            title: String,
+            propertyType: TrackerProperty,
+            delegate: PropertyCollectionViewDelegate,
+            dataSource: PropertyCollectionDataSource
     ) {
         self.init(frame: .zero)
-        
         self.title = title
         self.propertyType = propertyType
         self.delegate = delegate
         self.dataSource = dataSource
-        
+
         setupSubviews()
     }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+
+    func selectItem(at indexPath: IndexPath) {
+        guard let propertyType else { return }
+
+        collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .bottom)
+        delegate?.didSelectItem(at: indexPath, for: propertyType)
     }
 }
 
-// MARK: - Extensions
-
-// MARK: - UICollectionViewDelegate
 extension TrackerPropertyCollectionView: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let propertyType else { return }
@@ -89,7 +79,6 @@ extension TrackerPropertyCollectionView: UICollectionViewDelegate {
     }
 }
 
-// MARK: - UICollectionViewDelegateFlowLayout
 extension TrackerPropertyCollectionView: UICollectionViewDelegateFlowLayout {
     func collectionView(
         _ collectionView: UICollectionView,
@@ -98,7 +87,7 @@ extension TrackerPropertyCollectionView: UICollectionViewDelegateFlowLayout {
     ) -> CGSize {
         return CGSize(width: 52, height: 52)
     }
-    
+
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
@@ -106,7 +95,7 @@ extension TrackerPropertyCollectionView: UICollectionViewDelegateFlowLayout {
     ) -> CGFloat {
         return 5.0
     }
-    
+
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
@@ -116,48 +105,53 @@ extension TrackerPropertyCollectionView: UICollectionViewDelegateFlowLayout {
     }
 }
 
-// MARK: - UICollectionViewDataSource
+// MARK: DataSource
 extension TrackerPropertyCollectionView: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard let propertyType,
-              let dataSource else { return 0 }
-        
+              let dataSource else {return 0}
+
         return dataSource.numberOfItems(in: section, for: propertyType)
     }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
         guard let propertyType,
               let property = dataSource?.getItem(at: indexPath, for: propertyType)
-        else { return UICollectionViewCell() }
-        
+        else {return UICollectionViewCell() }
+
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: propertyType.reuseIdentifier(),
-            for: indexPath
+                      withReuseIdentifier: propertyType.reuseIdentifier(),
+                      for: indexPath
         )
         (cell as? PropertyCellProtocol)?.config(with: property)
         return cell
     }
 }
 
-// MARK: - Layout
+// MARK: Layout
 private extension TrackerPropertyCollectionView {
+
     func setupSubviews() {
         addSubview(titleView)
         addSubview(collectionView)
-        
+
         NSLayoutConstraint.activate([
             titleView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 28),
             titleView.topAnchor.constraint(equalTo: topAnchor),
-            
+
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             collectionView.topAnchor.constraint(equalTo: titleView.bottomAnchor),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             collectionView.heightAnchor.constraint(equalToConstant: 204),
-            collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
-    
+
     func createTitleView() -> UILabel {
+
         let title = UILabel()
         title.text = self.title
         title.font = UIFont.systemFont(ofSize: 19, weight: .bold)
@@ -166,8 +160,9 @@ private extension TrackerPropertyCollectionView {
         title.translatesAutoresizingMaskIntoConstraints = false
         return title
     }
-    
-    func createCollectionView() -> UIView {
+
+    func createCollectionView() -> UICollectionView {
+
         let layout = UICollectionViewFlowLayout()
         let collection = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collection.contentInset = UIEdgeInsets(top: 24, left: 18, bottom: 24, right: 18)
@@ -175,14 +170,14 @@ private extension TrackerPropertyCollectionView {
         collection.delegate = self
         collection.dataSource = self
         collection.register(
-            EmojiCollectionViewCell.self,
-            forCellWithReuseIdentifier: EmojiCollectionViewCell.reuseIdentifier
+                EmojiCollectionViewCell.self,
+                forCellWithReuseIdentifier: EmojiCollectionViewCell.reuseIdentifier
         )
         collection.register(
-            ColorCollectionViewCell.self,
-            forCellWithReuseIdentifier: ColorCollectionViewCell.reuseIdentifier
+                ColorCollectionViewCell.self,
+                forCellWithReuseIdentifier: ColorCollectionViewCell.reuseIdentifier
         )
-        
+
         return collection
     }
 }
