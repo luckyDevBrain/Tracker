@@ -7,30 +7,23 @@
 
 import UIKit
 
-// MARK: - Class Definition
+class WeekdaySwitchView: StackRoundedSwitch {
 
-/// Представление переключателя для выбора дня недели
-class DayOfWeekSwitchView: StackCircularSwitch {
-    
-    // MARK: - Public Properties
-    
     var weekday: WeekDay?
-    
-    // MARK: - Initializers
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
-    
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     convenience init(for weekday: WeekDay, isOn: Bool = false) {
         self.init(frame: .zero)
         self.weekday = weekday
         self.isOn = isOn
         let weekdayName = WeekDay.longWeekdayText[weekday] ?? ""
         self.text = weekdayName
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }

@@ -7,121 +7,105 @@
 
 import UIKit
 
-// MARK: - Enums
-
-/// Стили скругления углов для представления
-enum CircularCornerStyle {
+enum RoundedCornerStyle {
     case topOnly
     case bottomOnly
     case topAndBottom
-    case notCircular
+    case notRounded
 }
 
-// MARK: - Class Definition
+class StackRoundedView: UIView {
 
-/// Представление с настраиваемыми углами и текстовыми метками
-class StackCircularView: UIView {
-    
-    // MARK: - Public Properties
-    
-    /// Стиль скругления углов представления
-    var circularCornerStyle: CircularCornerStyle? {
+    var roundedCornerStyle: RoundedCornerStyle? {
         didSet {
-            updateCornerStyle(circularCornerStyle)
-            separatorView.isHidden = [.topOnly, .topAndBottom].contains(circularCornerStyle)
+            setCornerStyle(roundedCornerStyle)
+            // Сепаратор размещается по верхней границе. Поэтому для
+            // одиноких и верхних ячеек стека он не отображается по умолчанию
+            // В текущей версии не управляется снаружи
+            separatorView.isHidden = [.topOnly, .topAndBottom].contains(roundedCornerStyle)
         }
     }
-    
-    /// Основной текст представления
+
     var text: String = "" {
         didSet {
             buttonNameLabel.text = text
         }
     }
-    
-    /// Дополнительный текст (подробности)
+
     var detailedText: String? {
         didSet {
-            updateDetailText(detailedText)
+            setDetailText(with: detailedText)
         }
     }
-    
-    // MARK: - Private Properties
-    
+
     private lazy var buttonNameLabel = { createNameLabel() }()
     private lazy var buttonDetailLabel = { createDetailLabel() }()
-    private lazy var actionButton = { createActionStack() }()
+    private lazy var actionButton = { createActionButton() }()
     private lazy var separatorView = { createSeparatorView() }()
-    
-    // MARK: - Initializers
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setupView()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    // MARK: - Private Methods
-    
-    private func setupView() {
+
         backgroundColor = .ypBackgroundDay
         addSubview(separatorView)
         addSubview(actionButton)
         translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: 75),
-            
+
             actionButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             actionButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            // trailing = -75: выделено место для размещения '>' или элементов switch в расписании
             actionButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -75),
-            
+
             separatorView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             separatorView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             separatorView.topAnchor.constraint(equalTo: topAnchor),
             separatorView.heightAnchor.constraint(equalToConstant: 0.5)
         ])
     }
-    
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     private func createNameLabel() -> UILabel {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 17, weight: .regular)
-        label.textColor = .ypBlackDay
-        label.textAlignment = .left
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        let view = UILabel()
+        view.font = UIFont.systemFont(ofSize: 17, weight: .regular)
+        view.textColor = .ypBlackDay
+        view.textAlignment = .left
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }
-    
+
     private func createDetailLabel() -> UILabel {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 17, weight: .regular)
-        label.textColor = .ypGray
-        label.textAlignment = .left
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        let view = UILabel()
+        view.font = UIFont.systemFont(ofSize: 17, weight: .regular)
+        view.textColor = .ypGray
+        view.textAlignment = .left
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }
-    
-    private func createActionStack() -> UIStackView {
-        let stack = UIStackView(arrangedSubviews: [buttonNameLabel, buttonDetailLabel])
-        stack.spacing = 2
-        stack.alignment = .leading
-        stack.axis = .vertical
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
+
+    private func createActionButton() -> UIStackView {
+        let view = UIStackView(arrangedSubviews: [buttonNameLabel, buttonDetailLabel])
+        view.spacing = 2
+        view.alignment = .leading
+        view.axis = .vertical
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }
-    
-    private func createSeparatorView() -> UIView {
+
+    func createSeparatorView() -> UIView {
         let view = UIView()
         view.layer.borderColor = UIColor.ypGray.cgColor
         view.layer.borderWidth = 0.5
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }
-    
-    private func updateDetailText(_ text: String?) {
+
+    private func setDetailText(with text: String?) {
         guard let text, !text.isEmpty else {
             buttonDetailLabel.isHidden = true
             return
@@ -129,11 +113,11 @@ class StackCircularView: UIView {
         buttonDetailLabel.isHidden = false
         buttonDetailLabel.text = text
     }
-    
-    private func updateCornerStyle(_ style: CircularCornerStyle?) {
+
+    private func setCornerStyle(_ cornerStyle: RoundedCornerStyle?) {
         layer.cornerRadius = 16
         layer.masksToBounds = true
-        switch style {
+        switch cornerStyle {
         case .topOnly:
             layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         case .bottomOnly:

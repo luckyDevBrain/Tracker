@@ -7,62 +7,56 @@
 
 import UIKit
 
-// MARK: - SceneDelegate
-
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-    
-    // MARK: - Properties
-    
+
     var window: UIWindow?
 
-    // MARK: - Scene Lifecycle
-    
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let windowScene = (scene as? UIWindowScene) else { return }
-        setupWindow(with: windowScene)
-    }
-    
-    func sceneDidDisconnect(_ scene: UIScene) { }
-    func sceneDidBecomeActive(_ scene: UIScene) { }
-    func sceneWillResignActive(_ scene: UIScene) { }
-    func sceneWillEnterForeground(_ scene: UIScene) { }
-    func sceneDidEnterBackground(_ scene: UIScene) { }
-    
-    // MARK: - Private Methods
-    
-    private func setupWindow(with windowScene: UIWindowScene) {
-        window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = createTabBarController()
-        window?.makeKeyAndVisible()
-    }
+    private lazy var onboardingViewController = OnboardingViewController(
+        transitionStyle: .scroll,
+        navigationOrientation: .horizontal,
+        options: nil
+    )
 
-    private func createTabBarController() -> UITabBarController {
+    lazy var startViewController: UITabBarController = {
         let tabBarController = UITabBarController()
-        configureTabBarAppearance(tabBarController.tabBar)
-        
-        let trackersVC = HabitsViewController()
-        trackersVC.tabBarItem = UITabBarItem(
+        tabBarController.tabBar.barStyle = .default
+        tabBarController.tabBar.isTranslucent = false
+        tabBarController.tabBar.backgroundColor = .ypWhiteDay
+        tabBarController.tabBar.layer.borderColor = UIColor.ypGray.cgColor
+        tabBarController.tabBar.layer.borderWidth = 1
+
+        let trackersListViewController = TrackersViewController()
+        trackersListViewController.tabBarItem = UITabBarItem(
             title: "Трекеры",
             image: UIImage(named: "record.circle.fill"),
             selectedImage: nil
         )
 
-        let statisticsVC = StatisticsViewController()
-        statisticsVC.tabBarItem = UITabBarItem(
+        let statisticsViewController = StatisticsViewController()
+        statisticsViewController.tabBarItem = UITabBarItem(
             title: "Статистика",
             image: UIImage(systemName: "hare.fill"),
             selectedImage: nil
         )
 
-        tabBarController.viewControllers = [trackersVC, statisticsVC]
+        tabBarController.setViewControllers([trackersListViewController, statisticsViewController], animated: false)
         return tabBarController
-    }
+    }()
 
-    private func configureTabBarAppearance(_ tabBar: UITabBar) {
-        tabBar.barStyle = .default
-        tabBar.isTranslucent = false
-        tabBar.backgroundColor = .ypWhiteDay
-        tabBar.layer.borderColor = UIColor.ypGray.cgColor
-        tabBar.layer.borderWidth = 1
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+
+        let window = UIWindow(windowScene: windowScene)
+
+        if AppData.isFirstAppStart {
+            AppData.isFirstAppStart = false
+            window.rootViewController = onboardingViewController
+        } else {
+            window.rootViewController = startViewController
+        }
+
+        self.window = window
+        window.makeKeyAndVisible()
     }
 }

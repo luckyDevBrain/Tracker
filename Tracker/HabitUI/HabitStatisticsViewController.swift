@@ -7,41 +7,21 @@
 
 import UIKit
 
-// MARK: - Class Definition
-
 final class StatisticsViewController: UIViewController {
 
-    // MARK: - Private Properties
-    
-    private lazy var infoLabel: UILabel = {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = .ypWhiteDay
+        
         let label = UILabel()
         label.text = "Продолжение следует..."
         label.font = UIFont.systemFont(ofSize: 24, weight: .medium)
         label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    // MARK: - Lifecycle
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupView()
-    }
-
-    // MARK: - Private Methods
-    
-    private func setupView() {
-        view.backgroundColor = .ypWhiteDay
-        setupLabel()
-    }
-
-    private func setupLabel() {
-        
-        view.addSubview(infoLabel)
-        
+        view.addSubview(label)
         NSLayoutConstraint.activate([
-            infoLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            infoLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
 }
