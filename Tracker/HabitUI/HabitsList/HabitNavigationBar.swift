@@ -7,77 +7,54 @@
 
 import UIKit
 
-// MARK: - Class Definition
+final class TrackerNavigationBar: UINavigationBar {
 
-final class HabitNavigationBar: UINavigationBar {
-    
-    // MARK: - Private Properties
-    
     private weak var trackerBarDelegate: TrackersBarControllerProtocol?
-    
-    private lazy var datePicker: UIDatePicker = {
-        let picker = UIDatePicker()
-        picker.datePickerMode = .date
-        picker.preferredDatePickerStyle = .compact
-        picker.locale = Locale(identifier: "ru_RU")
-        picker.addTarget(self, action: #selector(currentDateDidChange), for: .valueChanged)
-        return picker
+    private lazy var datePicker = {
+        let datePicker = UIDatePicker()
+        datePicker.datePickerMode = .date
+        datePicker.preferredDatePickerStyle = .compact
+        datePicker.locale = Locale(identifier: "ru_RU")
+        datePicker.addTarget(self, action: #selector(currentDateDidChange), for: .valueChanged)
+        return datePicker
     }()
-    
-    // MARK: - Initializers
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     convenience init(frame: CGRect,
                      trackerBarDelegate: TrackersBarControllerProtocol) {
         self.init(frame: frame)
-        self.trackerBarDelegate = trackerBarDelegate
-        
-        configureNavigationBar()
-    }
-    
-    // MARK: - Actions
-    
-    @objc private func createTrackerTapped() {
-        trackerBarDelegate?.addTrackerButtonDidTapped()
-    }
-    
-    @objc private func currentDateDidChange() {
-        trackerBarDelegate?.currentDateDidChange(for: datePicker.date)
-    }
-    
-    // MARK: - Private Methods
-    
-    private func configureNavigationBar() {
+
         let navigationItem = UINavigationItem()
-        
-        let leftBarItem = UIBarButtonItem(
-            image: UIImage(systemName: "plus"),
-            style: .plain,
-            target: self,
-            action: #selector(createTrackerTapped)
-        )
+        let leftBarItem = UIBarButtonItem(image: UIImage(systemName: "plus"),
+                                          style: .plain,
+                                          target: self,
+                                          action: #selector(createTrackerTapped))
         leftBarItem.imageInsets = UIEdgeInsets(top: 0, left: -2, bottom: 0, right: 0)
-        
+        layoutMargins.left = 16
         navigationItem.leftBarButtonItem = leftBarItem
         navigationItem.title = "Трекеры"
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: datePicker)
-        
-        configureAppearance()
-        setItems([navigationItem], animated: true)
-    }
-    
-    private func configureAppearance() {
-        layoutMargins.left = 16
+
+        self.trackerBarDelegate = trackerBarDelegate
         prefersLargeTitles = true
         isTranslucent = false
         tintColor = .ypBlackDay
+        setItems([navigationItem], animated: true)
         translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    @objc private func createTrackerTapped() {
+        trackerBarDelegate?.addTrackerButtonDidTapped()
+    }
+
+    @objc private func currentDateDidChange() {
+        trackerBarDelegate?.currentDateDidChange(for: datePicker.date)
     }
 }

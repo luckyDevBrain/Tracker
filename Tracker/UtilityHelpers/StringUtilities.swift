@@ -7,32 +7,15 @@
 
 import Foundation
 
-// MARK: - Class Definition
-
-/// Утилита для работы со строками, включая форматирование чисел
-final class StringUtilities {
-    
-    // MARK: - Static Methods
-    
-    /// Возвращает правильный суффикс для слова "день" в зависимости от количества дней
-    /// - Parameter daysCount: Количество дней
-    /// - Returns: Суффикс: "день", "дня" или "дней"
-    static func getDaysText(for daysCount: Int) -> String {
-        let remainder100 = daysCount % 100
-        
-        // Особый случай для чисел 11–14, всегда "дней"
-        if remainder100 >= 11 && remainder100 <= 14 {
-            return "дней"
-        }
-        
-        // Определение суффикса по последней цифре числа
-        let lastDigit = daysCount % 10
-        switch lastDigit {
-        case 1:
+final class TextHelper {
+    static func getDaysText(for daysNumber: Int) -> String {
+        let lastDigit = daysNumber % 10
+        let reminder100 = daysNumber % 100
+        if lastDigit == 1 && reminder100 != 11 {
             return "день"
-        case 2, 3, 4:
+        } else if lastDigit >= 2 && lastDigit <= 4 && (reminder100 < 10 || reminder100 >= 20) {
             return "дня"
-        default:
+        } else {
             return "дней"
         }
     }
