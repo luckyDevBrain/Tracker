@@ -5,7 +5,7 @@
 //  Created by Kirill on 24.03.2025.
 //
 
-import CoreData
+import Foundation
 
 final class MockDataGenerator {
 
@@ -15,8 +15,10 @@ final class MockDataGenerator {
         guard let context = dataProvider.dataStore.getContext() else { return }
 
         let checkRequest = TrackerCoreData.fetchRequest()
-        let result = try! context.fetch(checkRequest)
-        if result.count > 0 { return }
+        if let result = try? context.fetch(checkRequest),
+           result.count > 0 {
+            return
+        }
 
         struct TrackerRecord {
             let name: String
@@ -24,9 +26,10 @@ final class MockDataGenerator {
             let emoji: String
             let color: String
             let schedule: String?
+            let isPinned: Bool
         }
 
-         let category1 = TrackerCategoryCoreData(context: context)
+        let category1 = TrackerCategoryCoreData(context: context)
         category1.categoryID = UUID()
         category1.name = "Первая категория"
 
@@ -34,35 +37,47 @@ final class MockDataGenerator {
         tracker.trackerID = UUID()
         tracker.name = "Завершенная сегодня"
         tracker.isRegular = true
-        tracker.emoji = "🙅‍♂️"
+        tracker.emoji = "❤️"
         tracker.color = "ypColorSelection-6"
         tracker.schedule = "Пн,Вт,Ср,Чт,Пт"
         tracker.category = category1
         tracker.categoryID = category1.categoryID
+        tracker.isPinned = false
 
-        let completed = TrackerRecordCoreData(context: context)
-        completed.trackerID = tracker.trackerID
-        completed.completedAt = Date().truncated()
-        completed.tracker = tracker
+        if let trackerID = tracker.trackerID,
+           let currentDate = Date().truncated() {
+            dataProvider.switchTracker(withID: trackerID, to: true, for: currentDate)
+        } else {
+            print("Ошибка наполнения mock-данными: не удалось отметить трекер выполненным")
+        }
 
         // а трекеры добавляем сначала для первой категории -
         // для проверки сортировки по категориям и трекерам
-        let _ = [
-                TrackerRecord(name: "Регулярное событие 1", isRegular: true, emoji: "🙂", color: "ypColorSelection-1", schedule: "Пн,Ср,Вс"),
-                TrackerRecord(name: "Нерегулярное событие 1", isRegular: false, emoji: "🙃", color: "ypColorSelection-2", schedule: nil),
-                TrackerRecord(name: "Регулярное событие 2", isRegular: true, emoji: "😝", color: "ypColorSelection-3", schedule: "Вт,Пн,Вс")
-        ].enumerated().map { index, raw in
-                let tracker = TrackerCoreData(context: context)
-                tracker.trackerID = UUID()
-                tracker.categoryID = category1.categoryID
-                tracker.name = raw.name
-                tracker.isRegular = raw.isRegular
-                tracker.emoji = raw.emoji
-                tracker.color = raw.color
-                tracker.schedule = raw.schedule
-                tracker.category = category1
-                return tracker
+        let trackersForCategory1 = [
+            TrackerRecord(name: "Регулярное событие 1", isRegular: true, emoji: "😻", color: "ypColorSelection-1", schedule: "Пн,Ср,Вс", isPinned: false),
+            TrackerRecord(name: "Нерегулярное событие 1", isRegular: false, emoji: "🌺", color: "ypColorSelection-2", schedule: nil, isPinned: true),
+            TrackerRecord(name: "Регулярное событие 2", isRegular: true, emoji: "🐶", color: "ypColorSelection-3", schedule: "Вт,Пн,Вс", isPinned: false)
+        ]
+
+        let trackersForCategory1CoreData = trackersForCategory1.map { raw in
+            let tracker = TrackerCoreData(context: context)
+            tracker.trackerID = UUID()
+            tracker.categoryID = category1.categoryID
+            tracker.name = raw.name
+            tracker.isRegular = raw.isRegular
+            tracker.emoji = raw.emoji
+            tracker.color = raw.color
+            tracker.schedule = raw.schedule
+            tracker.category = category1
+            tracker.isPinned = raw.isPinned
+            return tracker
         }
+
+        // Сохраняем трекеры для первой категории
+        trackersForCategory1CoreData.forEach { tracker in
+            context.insert(tracker)
+        }
+
         try? context.save()
 
         // Добавляем категорию 2
@@ -76,20 +91,28 @@ final class MockDataGenerator {
         category3.name = "Третья категория"
 
         // добавляем трекеры для третьей категории
-        let _ = [
-            TrackerRecord(name: "Событие третьей категории 1, регуляр", isRegular: true, emoji: "🫶", color: "ypColorSelection-4", schedule: "Пн"),
-            TrackerRecord(name: "нерегулярное событие, категория 3 ", isRegular: false, emoji: "👍", color: "ypColorSelection-5", schedule: nil)
-        ].enumerated().map { index, raw in
-                let tracker = TrackerCoreData(context: context)
-                tracker.trackerID = UUID()
-                tracker.categoryID = category3.categoryID
-                tracker.name = raw.name
-                tracker.isRegular = raw.isRegular
-                tracker.emoji = raw.emoji
-                tracker.color = raw.color
-                tracker.schedule = raw.schedule
-                tracker.category = category3
-                return tracker
+        let trackersForCategory3 = [
+            TrackerRecord(name: "Событие третьей категории 1, регуляр", isRegular: true, emoji: "🐶", color: "ypColorSelection-4", schedule: "Пн", isPinned: true),
+            TrackerRecord(name: "нерегулярное событие, категория 3 ", isRegular: false, emoji: "🌺", color: "ypColorSelection-5", schedule: nil, isPinned: false)
+        ]
+
+        let trackersForCategory3CoreData = trackersForCategory3.map { raw in
+            let tracker = TrackerCoreData(context: context)
+            tracker.trackerID = UUID()
+            tracker.categoryID = category3.categoryID
+            tracker.name = raw.name
+            tracker.isRegular = raw.isRegular
+            tracker.emoji = raw.emoji
+            tracker.color = raw.color
+            tracker.schedule = raw.schedule
+            tracker.category = category3
+            tracker.isPinned = raw.isPinned
+            return tracker
+        }
+
+        // Сохраняем трекеры для третьей категории
+        trackersForCategory3CoreData.forEach { tracker in
+            context.insert(tracker)
         }
 
         try? context.save()
@@ -101,11 +124,9 @@ final class MockDataGenerator {
         if let result = try? context.fetch(request),
            let categoryCoreData = result.first {
             return TrackerCategoryStore(categoryCoreData: categoryCoreData)
-        }
-        else {
-            guard let newCategory = NSEntityDescription.insertNewObject(forEntityName: "TrackerCategoryCoreData", into: context) as? TrackerCategoryCoreData
-            else { return nil }
-
+        } else {
+            let newCategory = TrackerCategoryCoreData(context: context)
+            newCategory.categoryID = UUID()
             newCategory.name = "Дефолтная категория"
             try? context.save()
             return TrackerCategoryStore(categoryCoreData: newCategory)

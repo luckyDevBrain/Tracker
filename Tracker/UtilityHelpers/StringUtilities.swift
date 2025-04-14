@@ -7,16 +7,16 @@
 
 import Foundation
 
-final class TextHelper {
-    static func getDaysText(for daysNumber: Int) -> String {
-        let lastDigit = daysNumber % 10
-        let reminder100 = daysNumber % 100
-        if lastDigit == 1 && reminder100 != 11 {
-            return "день"
-        } else if lastDigit >= 2 && lastDigit <= 4 && (reminder100 < 10 || reminder100 >= 20) {
-            return "дня"
-        } else {
-            return "дней"
-        }
+extension String {
+    func localized(comment: String = "") -> String {
+        let localizedString = NSLocalizedString(self, comment: comment)
+        return localizedString
+    }
+
+    func localizedValue(_ value: CVarArg, comment: String = "") -> String {
+        String.localizedStringWithFormat(
+            NSLocalizedString(self, comment: comment),
+            value
+        )
     }
 }
