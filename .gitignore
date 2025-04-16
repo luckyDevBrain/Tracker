@@ -1,15 +1,21 @@
-# CocoaPods
+# MARK: - CocoaPods
 Pods/
 Podfile.lock
 
-# Xcode
+# MARK: - Snapshot Tests
+**/__Snapshots__/
+*.png
+
+# MARK: - Xcode
 *.xcodeproj/project.xcworkspace/
 *.xcodeproj/xcuserdata/
 *.xcuserstate
 *.xcscmblueprint
 *.xccheckout
+*.xcworkspace
+*.xcuserdata/
 
-# Xcode build
+# MARK: - Xcode build
 build/
 DerivedData/
 *.moved-aside
@@ -23,56 +29,56 @@ DerivedData/
 !default.perspectivev3
 *.hmap
 
-# App packaging
+# MARK: - App packaging
 *.ipa
 *.dSYM.zip
 *.dSYM
 
-# Swift
+# MARK: - Swift
 timeline.xctimeline
 playground.xcworkspace
 
-# Swift Package Manager
+# MARK: - Swift Package Manager
 .build/
 Packages/
 Package.pins
 Package.resolved
 .swiftpm
 
-# Carthage
+# MARK: - Carthage
 Carthage/Build/
 Carthage/Checkouts/
 
-# Accio
+# MARK: - Accio
 Dependencies/
 .accio/
 
-# fastlane
+# MARK: - fastlane
 fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
-# Code Injection
+# MARK: - Code Injection
 iOSInjectionProject/
 
-# macOS
+# MARK: - macOS
 .DS_Store
 
-# Previews
+# MARK: - Previews
 .preview-thumbnails
 
-# Firebase
+# MARK: - Firebase
 GoogleService-Info.plist
 *.symbols
 
-# SwiftLint / SwiftFormat temp files
+# MARK: - SwiftLint / SwiftFormat temp files
 .swiftlint.yml
 .swiftformat
 .swiftlint.tmp
 
-# Xcode automatic scheme management
+# MARK: - Xcode automatic scheme management
 xcshareddata/WorkspaceSettings.xcsettings
 
-# Localization
+# MARK: - Localization
 *.xliff

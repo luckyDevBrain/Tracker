@@ -15,7 +15,7 @@ enum AppDataKeys: String {
     case statisticsAverageCompleted
 }
 
-class AppData {
+final class AppData {
 
     static let shared = AppData()
 
