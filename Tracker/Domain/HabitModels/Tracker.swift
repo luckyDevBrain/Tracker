@@ -37,4 +37,7 @@ struct Tracker {
     
     /// счетчик количества выполненных
     let completedCounter: Int
-}
+    
+    /// признак закрепленности трекера: true - трекер закреплен, false - незакреплен
+        let isPinned: Bool
+    }

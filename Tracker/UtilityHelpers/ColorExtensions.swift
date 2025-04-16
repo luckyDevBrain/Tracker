@@ -14,7 +14,11 @@ extension UIColor {
     static let ypGrayCode = UIColor(named: "ypGray")!
     static let ypRedCode = UIColor(named: "ypRed")!
     static let ypWhiteDayCode = UIColor(named: "ypWhiteDay")!
-
+    static let ypGradientColorСode1 = UIColor(named: "ypGradientColor1")!
+    static let ypGradientColorCode2 = UIColor(named: "ypGradientColor2")!
+    static let ypGradientColorCode3 = UIColor(named: "ypGradientColor3")!
+    
+    
     enum YpColors: String, CaseIterable {
         case ypColorSelectionCode1 = "ypColorSelection-1"
         case ypColorSelectionCode2 = "ypColorSelection-2"
@@ -34,11 +38,11 @@ extension UIColor {
         case ypColorSelectionCode16 = "ypColorSelection-16"
         case ypColorSelectionCode17 = "ypColorSelection-17"
         case ypColorSelectionCode18 = "ypColorSelection-18"
-
+        
         static func allColorNames() -> [String] {
             return allCases.compactMap{ $0.rawValue }
         }
-
+        
         func color() -> UIColor? {
             return UIColor(named: self.rawValue)
         }

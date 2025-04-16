@@ -1,0 +1,36 @@
+/* 
+  Localizable.strings
+  Tracker
+
+  Created by Kirill on 14.04.2025.
+  
+*/
+
+"trackersList.title" = "Trackers";
+"trackersList.filter" = "Filters";
+"trackersList.pinnedCategory" = "Pinned";
+"trackersList.delete" = "Delete";
+"trackersList.edit" = "Edit";
+"trackersList.pin" = "Pin";
+"trackersList.unpin" = "Unpin";
+"trackersList.approveToDelete" = "You're about to delete tracker. Are you sure?";
+
+"trackersList.approveDeletion" = "Delete";
+"trackersList.cancelDeletion" = "Cancel";
+"trackersList.search" = "Search";
+
+"tabBar.trackers" = "Trackers";
+"tabBar.statistics" = "Statistics";
+
+"statistics.title" = "Statistics";
+"statistics.bestPeriod" = "Best period";
+"statistics.perfectDays" = "Perfect days";
+"statistics.trackersCompleted" = "Trackers completed";
+"statistics.averageCompleted" = "Average completed per day";
+"statistics.placeholderText" = "Nothing to analyze yet";
+
+"filters.title" = "Filters";
+"filters.allTrackers" = "All trackers";
+"filters.currentDate" = "Switch to current date";
+"filters.completed" = "Completed only";
+"filters.uncompleted" = "Uncompleted only";

@@ -123,7 +123,12 @@ class StackRoundedView: UIView {
         case .bottomOnly:
             layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         case .topAndBottom:
-            layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            layer.maskedCorners = [
+                .layerMinXMinYCorner,
+                .layerMaxXMinYCorner,
+                .layerMinXMaxYCorner,
+                .layerMaxXMaxYCorner
+            ]
         default:
             layer.cornerRadius = 0
             layer.masksToBounds = false
