@@ -5,13 +5,20 @@
 //  Created by Kirill on 15.10.2024.
 //
 
-import Testing
+import XCTest
+import SnapshotTesting
 @testable import Tracker
 
-struct TrackerTests {
+final class TrackerTests: XCTestCase {
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    func testStartViewController() throws {
+        let startVC = StartViewController()
+        // .light mode
+        assertSnapshots(of: startVC, as: [.image(on: .iPhone13ProMax, traits: UITraitCollection(userInterfaceStyle: .light))])
+        assertSnapshots(of: startVC, as: [.image(on: .iPhone13, traits: UITraitCollection(userInterfaceStyle: .light))])
+
+        // .dark mode
+        assertSnapshots(of: startVC, as: [.image(on: .iPhone13ProMax, traits: UITraitCollection(userInterfaceStyle: .dark))])
+        assertSnapshots(of: startVC, as: [.image(on: .iPhone13, traits: UITraitCollection(userInterfaceStyle: .dark))])
     }
-
 }
